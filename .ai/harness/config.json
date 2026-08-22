@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "context_budget_chars": 16000,
+  "provider_output_limit_chars": 200000,
+  "providers": {
+    "codex": {
+      "executable": "codex",
+      "model": null,
+      "reasoning_effort": {
+        "planner": "high",
+        "implementer": "high",
+        "reviewer": "high"
+      },
+      "timeout_seconds": 1200
+    },
+    "claude": {
+      "executable": "claude",
+      "model": null,
+      "reasoning_effort": {
+        "planner": "high",
+        "implementer": "high",
+        "reviewer": "high"
+      },
+      "timeout_seconds": 1200
+    }
+  },
+  "routing": {
+    "planner": "codex",
+    "implementer": "codex",
+    "reviewer": {
+      "active-agent": "codex",
+      "independent": "claude"
+    }
+  }
+}
