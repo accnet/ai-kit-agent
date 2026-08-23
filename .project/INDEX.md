@@ -14,3 +14,4 @@
 | ai-kit-reasoning-efficiency | done | user conversation | 2026-08-22 |
 | controlled-orchestrator-v1 | done | user conversation | 2026-08-22 |
 | controlled-orchestrator-v2 | done | user continuation | 2026-08-22 |
+| portable-installer | done | user conversation | 2026-08-22 |

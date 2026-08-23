@@ -1,0 +1,65 @@
+# AI-Kit Core
+
+AI-Kit is a chat-first, tool-neutral workflow for coding agents. This file contains only rules that must be available in every session. Reusable procedures live in Agent Skills and detailed guidance lives in `.ai/modules/`.
+
+## Sources of truth
+
+| Tier | Purpose | Persistence |
+|---|---|---|
+| `.ai/` | Maintained process, skills, scripts, and durable knowledge | committed |
+| `features/` | User requirements and Researcher-owned research — WHAT | committed |
+| `.project/` | Regenerable plans, tasks, decisions, and progress — HOW | committed |
+| `.workspace/` | Session pointers and scratch state | local, gitignored |
+
+Requirements discovered during implementation go back to the user or Researcher; do not bury them in `.project/`. Only the Researcher writes `features/`. Edit `.ai/` only when the user explicitly requests a kit/process change.
+
+## Route the request
+
+- Answer, explain, review, diagnose, or report status: inspect relevant material and report; do not implement changes unless requested.
+- Plan work: use the `ai-kit-plan` skill.
+- Assess non-trivial architecture: use the `ai-kit-assess-architecture` skill.
+- Design or revise a public cross-boundary contract: use the `ai-kit-design-contract` skill.
+- Build, change, or fix ordinary application/tooling code: use the `ai-kit-implement` skill.
+- Change database schema or data: use the `ai-kit-migrate-data` skill.
+- Validate acceptance behavior as QA: use the `ai-kit-validate-quality` skill.
+- Review completed work: use the `ai-kit-review` skill.
+- Report project execution state: use the `ai-kit-status` skill.
+
+If a session resumes active work, read `.workspace/session.md` first. Otherwise, do not load process files speculatively; load only the selected skill, current task contract, target files, and directly relevant modules.
+
+## Planning and completion
+
+- Standard or large changes require `.project/<feature>/tasks.md` with binary acceptance criteria before implementation (G1).
+- A change is trivial only when it touches at most two files, changes no database data/schema, dependency, or contract, and is reversible with one revert. Trivial work may use the skill's inline checklist.
+- Any database change is never trivial and always requires a full plan.
+- Close a task only when its acceptance criteria pass and relevant tests/lint/typecheck succeed (G2).
+- QA validation and G3 review remain required. Reviewer separation is controlled by `.ai/config.json`: with `review.independent_enabled=false`, the active agent performs and labels the five-pass review; set the flag to `true` manually before requiring an independent provider.
+- Legacy features use `tasks.md` as execution state. Harness-managed features use versioned `state.json`; `plan.md` and `tasks.md` are generated views.
+
+## Safety and scope
+
+- Follow existing project code patterns; report drift instead of refactoring unrelated code.
+- Do not expand beyond the user's requested scope or perform external writes merely because a tool is available.
+- Destructive or hard-to-recover actions, production deploys, force-pushes, and irreversible migrations require explicit user approval for the specific action (G5).
+- Never commit `.workspace/`, secrets, or credentials. Run repository checks before any requested commit (G4).
+- Provider calls are opt-in through `.ai/scripts/harness.sh`. In `.ai/config.json`, `execution.codex_cli.enabled=true` opts normal harness tasks into Codex CLI, while `quality.qa.enabled` and `quality.review.enabled` independently opt QA and Review into their selected CLI. Planning still requires an explicit provider. A worker already selected by the harness performs its injected task or review directly and never invokes its route recursively.
+
+## Runtime harness
+
+For durable LLM-driven execution, follow `.ai/harness/README.md`. Models own planning, replanning, implementation strategy, and evidence synthesis. The harness owns structured state, context retrieval, approvals, scheduling, actual file-scope verification, retries, configured reviewer-separation enforcement, and recovery. Large plan revisions and risky tasks stop for explicit approval.
+
+## Layout
+
+```text
+.ai/agents/       role contracts loaded on demand
+.ai/skills/       eight canonical planning, design, execution, QA, review, and status workflows
+.ai/modules/      conditional process and engineering references
+.ai/scripts/      deterministic state, sync, and gate mechanics
+.ai/harness/      provider-neutral state, memory, policy, and orchestration runtime
+.ai/tests/        dependency-free mechanics tests
+features/<x>/     requirements and research
+.project/<x>/     plan, tasks, architecture, decisions, progress
+.workspace/       local session state
+```
+
+Definition of Done: acceptance criteria met, validation passes, required review approves, and project task/index state is current.

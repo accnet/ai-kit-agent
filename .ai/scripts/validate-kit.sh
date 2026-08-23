@@ -14,7 +14,11 @@ required=(
   .project/INDEX.md .githooks/pre-commit .github/workflows/gates.yml
   .ai/scripts/check-gates.sh .ai/scripts/sync-skills.sh
   .ai/scripts/validate-kit.sh .ai/scripts/doctor.sh .ai/scripts/harness.sh .ai/scripts/git-qa.sh
-  .ai/harness/cli.py .ai/harness/config.json .ai/tests/run.sh .ai/tests/test_harness.py
+  .ai/harness/cli.py .ai/harness/config.json .ai/tests/run.sh .ai/tests/test_harness.py .ai/tests/test_install.sh
+  .ai/install/install.sh .ai/install/manifest.txt .ai/install/README.md
+  .ai/install/templates/AGENTS.md .ai/install/templates/CLAUDE.md
+  .ai/install/templates/pre-commit .ai/install/templates/gates.yml
+  .ai/install/templates/project-index.md .ai/install/templates/gitignore.entries
 )
 for path in "${required[@]}"; do [ -e "$path" ] || error "missing $path"; done
 
@@ -57,6 +61,26 @@ done
 
 .ai/scripts/sync-skills.sh --check || fail=1
 
+cmp -s AGENTS.md .ai/install/templates/AGENTS.md || error "installer AGENTS.md template drift"
+cmp -s CLAUDE.md .ai/install/templates/CLAUDE.md || error "installer CLAUDE.md template drift"
+cmp -s .githooks/pre-commit .ai/install/templates/pre-commit || error "installer pre-commit template drift"
+cmp -s .github/workflows/gates.yml .ai/install/templates/gates.yml || error "installer gates workflow template drift"
+
+manifest_count=0
+install_destinations=$'\n'
+while IFS='|' read -r source destination mode; do
+  case "$source" in ''|\#*) continue ;; esac
+  manifest_count=$((manifest_count+1))
+  [ -f ".ai/install/templates/$source" ] || error "installer manifest source missing: $source"
+  case "$destination" in ''|/*|*..*) error "unsafe installer destination: $destination" ;; esac
+  case "$mode" in 0644|0755) ;; *) error "invalid installer mode for $destination: $mode" ;; esac
+  case "$install_destinations" in
+    *$'\n'"$destination"$'\n'*) error "duplicate installer destination: $destination" ;;
+    *) install_destinations="${install_destinations}${destination}"$'\n' ;;
+  esac
+done < .ai/install/manifest.txt
+[ "$manifest_count" -eq 5 ] || error "expected 5 installer manifest entries, found $manifest_count"
+
 while IFS= read -r -d '' file; do
   if ! LC_ALL=C tr -d '\000' < "$file" | cmp -s - "$file"; then
     error "NUL byte found in $file"
@@ -66,7 +90,7 @@ done < <(find AGENTS.md CLAUDE.md .gitignore .ai .agents .claude .githooks .gith
 while IFS= read -r -d '' script; do
   bash -n "$script" || error "invalid shell syntax: $script"
   [ -x "$script" ] || error "script is not executable: $script"
-done < <(find .ai/scripts .ai/tests .githooks -type f \( -name '*.sh' -o -name 'pre-commit' \) -print0 2>/dev/null)
+done < <(find .ai/scripts .ai/tests .ai/install .githooks -type f \( -name '*.sh' -o -name 'pre-commit' \) -print0 2>/dev/null)
 
 deprecated_hits="$(grep -RInE --exclude='validate-kit.sh' 'Attempt 4|Review → QA|\.codex/prompts/' AGENTS.md .ai .claude 2>/dev/null || true)"
 [ -z "$deprecated_hits" ] || error "deprecated or contradictory workflow text remains: $(printf '%s' "$deprecated_hits" | tr '\n' ';')"
@@ -75,7 +99,15 @@ grep -q '^routing_mode: harness$' .ai/models.yaml || error "models.yaml must ena
 grep -qE '^test_command: .+$' .ai/ai.yaml || error "ai.yaml missing test_command"
 grep -qE '^git_qa_command: .+$' .ai/ai.yaml || error "ai.yaml missing git_qa_command"
 
-if ! PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile .ai/harness/*.py .ai/tests/test_harness.py; then
+if ! python3 - .ai/harness/*.py .ai/tests/test_harness.py <<'PY'
+import pathlib
+import sys
+
+for source in sys.argv[1:]:
+    path = pathlib.Path(source)
+    compile(path.read_bytes(), str(path), "exec")
+PY
+then
   error "harness Python syntax validation failed"
 fi
 if ! python3 -c 'import json; json.load(open(".ai/harness/config.json", encoding="utf-8"))'; then

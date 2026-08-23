@@ -22,6 +22,7 @@ check() {
 check "static kit validation" .ai/scripts/validate-kit.sh
 check "skill projections are synchronized" .ai/scripts/sync-skills.sh --check
 check "harness Python integration suite" python3 .ai/tests/test_harness.py
+check "portable installer regression suite" bash .ai/tests/test_install.sh
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT

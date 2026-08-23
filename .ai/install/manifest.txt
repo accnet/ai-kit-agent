@@ -1,0 +1,6 @@
+# template|project destination|mode
+AGENTS.md|AGENTS.md|0644
+CLAUDE.md|CLAUDE.md|0644
+pre-commit|.githooks/pre-commit|0755
+gates.yml|.github/workflows/gates.yml|0644
+project-index.md|.project/INDEX.md|0644

@@ -1,4 +1,4 @@
-version: 0.14.0
+version: 0.15.0
 mode: harness
 test_command: bash .ai/tests/run.sh
 git_qa_command: bash .ai/scripts/git-qa.sh check worktree
