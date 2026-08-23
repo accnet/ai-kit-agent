@@ -1,8 +1,0 @@
-{"ts":"2026-08-22T02:11:31Z","event":"completed","feature":"ai-kit-agent-harness","task":"T2","actor":"codex","detail":"state/store/events/lock/projections smoke passed"}
-{"ts":"2026-08-22T02:12:47Z","event":"completed","feature":"ai-kit-agent-harness","task":"T3","actor":"codex","detail":"bounded retrieval and stale provenance smoke passed"}
-{"ts":"2026-08-22T02:14:33Z","event":"completed","feature":"ai-kit-agent-harness","task":"T4","actor":"codex","detail":"structured provider and safe argv smoke passed"}
-{"ts":"2026-08-22T02:17:43Z","event":"completed","feature":"ai-kit-agent-harness","task":"T5","actor":"codex","detail":"policy scheduler approvals retries replan review smoke passed"}
-{"ts":"2026-08-22T02:19:09Z","event":"completed","feature":"ai-kit-agent-harness","task":"T6","actor":"codex","detail":"offline CLI lifecycle smoke passed"}
-{"ts":"2026-08-22T02:23:09Z","event":"gate_fail","feature":"ai-kit-agent-harness","task":"T8","actor":"reviewer","detail":"G3 request changes: plan approval, independent review, actual mutation scope, crash recovery"}
-{"ts":"2026-08-22T02:30:08Z","event":"gate_pass","feature":"ai-kit-agent-harness","task":"T8","actor":"reviewer","detail":"G3 approve with notes after T10-T13; no blocker or major findings"}
-{"ts":"2026-08-22T02:32:22Z","event":"completed","feature":"ai-kit-agent-harness","task":"T9","actor":"documenter","detail":"v0.6 docs state and final doctor pass recorded"}
