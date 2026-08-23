@@ -16,3 +16,13 @@ coverage.xml
 htmlcov/
 .DS_Store
 Thumbs.db
+
+# Runtime distribution: generated project integrations.
+.agents/
+.claude/
+.github/
+.githooks/
+.project/
+features/
+AGENTS.md
+CLAUDE.md
