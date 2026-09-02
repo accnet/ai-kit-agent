@@ -34,10 +34,13 @@ for file in "${files[@]}"; do
   esac
 done
 
-# Kit definitions may describe .workspace; product code and feature/project records may not depend on it.
+# Kit definitions and project planning records may DESCRIBE .workspace; product code may not depend
+# on it. Plans and task files legitimately explain which paths stay ignored, so .project/* is
+# exempt from the mention scan. Committing .workspace CONTENT is still blocked by the loop above,
+# which is the protection that actually matters.
 for file in "${files[@]}"; do
   case "$file" in
-    .ai/*|.agents/*|AGENTS.md|CLAUDE.md|README.md|ROADMAP.md|CHANGELOG.md|.gitignore|.githooks/*|.github/*|.claude/*|.cursor/*|.windsurf/*) continue ;;
+    .ai/*|.agents/*|.project/*|AGENTS.md|CLAUDE.md|README.md|ROADMAP.md|CHANGELOG.md|.gitignore|.githooks/*|.github/*|.claude/*|.cursor/*|.windsurf/*) continue ;;
   esac
   [ -L "$file" ] && continue
   [ -f "$file" ] || continue

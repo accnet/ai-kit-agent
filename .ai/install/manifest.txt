@@ -1,6 +1,8 @@
-# template|project destination|mode
-AGENTS.md|AGENTS.md|0644
-CLAUDE.md|CLAUDE.md|0644
-pre-commit|.githooks/pre-commit|0755
-gates.yml|.github/workflows/gates.yml|0644
-project-index.md|.project/INDEX.md|0644
+# template|project destination|mode|kind
+# kind: managed = must stay byte-identical to its template
+#       seed    = created once, then owned by the project and free to edit
+AGENTS.md|AGENTS.md|0644|managed
+CLAUDE.md|CLAUDE.md|0644|managed
+pre-commit|.githooks/pre-commit|0755|managed
+gates.yml|.github/workflows/gates.yml|0644|managed
+project-index.md|.project/INDEX.md|0644|seed

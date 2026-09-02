@@ -54,6 +54,9 @@ WORKSPACE_PHASES = {
     "discarded",
     "failed",
 }
+REMEDIATION_GATES = {"qa", "review"}
+REMEDIATION_SEVERITIES = {"minor", "major", "blocker"}
+REMEDIATION_STATES = {"open", "resolved", "dismissed"}
 
 
 def utc_now() -> str:
@@ -98,6 +101,10 @@ def new_state(
         "program_id": None,
         "workstream_id": None,
         "parent_feature": None,
+        "feature_dependencies": [],
+        "capability_decision": None,
+        "feature_dependency_results": [],
+        "remediations": [],
         "services": [],
         "contracts": [],
         "contract_approvals": [],
@@ -203,8 +210,9 @@ def validate_state(state: Dict[str, Any]) -> None:
             "reviews",
             "requirement_refs",
             "verification_commands",
+            "verification_profiles",
         ):
-            if key not in task and key in {"requirement_refs", "verification_commands"}:
+            if key not in task and key in {"requirement_refs", "verification_commands", "verification_profiles"}:
                 continue
             if not isinstance(task.get(key), list):
                 raise ValueError("%s.%s must be an array" % (task["id"], key))
@@ -213,6 +221,20 @@ def validate_state(state: Dict[str, Any]) -> None:
                 isinstance(argument, str) and argument for argument in command
             ):
                 raise ValueError("%s verification command must be a non-empty string array" % task["id"])
+        if len(task.get("verification_profiles", [])) != len(set(task.get("verification_profiles", []))):
+            raise ValueError("duplicate verification profiles for %s" % task["id"])
+        remediation_id = task.get("remediation_id")
+        remediation_of = task.get("remediation_of")
+        if remediation_id is not None and (
+            not isinstance(remediation_id, str) or not re.fullmatch(r"REM-[1-9][0-9]*", remediation_id)
+        ):
+            raise ValueError("invalid remediation_id for %s" % task["id"])
+        if remediation_of is not None and (
+            not isinstance(remediation_of, str) or not re.fullmatch(r"T[1-9][0-9]*", remediation_of)
+        ):
+            raise ValueError("invalid remediation_of for %s" % task["id"])
+        if (remediation_id is None) != (remediation_of is None):
+            raise ValueError("%s remediation_id and remediation_of must be provided together" % task["id"])
         unknown_requirements = set(task.get("requirement_refs", [])) - set(requirement_ids)
         if unknown_requirements:
             raise ValueError(
@@ -276,6 +298,50 @@ def validate_state(state: Dict[str, Any]) -> None:
     known = set(ids)
     if any(set(task["dependencies"]) - known for task in tasks):
         raise ValueError("state contains an unknown task dependency")
+    if not isinstance(state.get("feature_dependencies", []), list):
+        raise ValueError("state feature_dependencies must be an array")
+    decision = state.get("capability_decision")
+    if decision is not None:
+        if not isinstance(decision, dict) or decision.get("schema_version") != 1:
+            raise ValueError("state capability_decision must use schema_version 1")
+        if not isinstance(decision.get("capabilities"), list) or not isinstance(decision.get("provenance"), dict):
+            raise ValueError("state capability_decision is malformed")
+    remediations = state.get("remediations", [])
+    if not isinstance(remediations, list):
+        raise ValueError("state remediations must be an array")
+    remediation_ids = []
+    for remediation in remediations:
+        if not isinstance(remediation, dict):
+            raise ValueError("every remediation must be an object")
+        required = {"id", "source_gate", "source_task", "severity", "criterion", "summary", "status", "fix_task", "attempts", "created_at", "resolved_at"}
+        if set(remediation) != required:
+            raise ValueError("remediation fields must be exactly: %s" % ", ".join(sorted(required)))
+        identifier = remediation.get("id")
+        if not isinstance(identifier, str) or not re.fullmatch(r"REM-[1-9][0-9]*", identifier):
+            raise ValueError("every remediation needs a valid REM-n id")
+        remediation_ids.append(identifier)
+        if remediation.get("source_gate") not in REMEDIATION_GATES:
+            raise ValueError("invalid remediation source_gate for %s" % identifier)
+        if not isinstance(remediation.get("source_task"), str) or remediation["source_task"] not in known:
+            raise ValueError("remediation %s has an unknown source task" % identifier)
+        if remediation.get("severity") not in REMEDIATION_SEVERITIES:
+            raise ValueError("invalid remediation severity for %s" % identifier)
+        for field in ("criterion", "summary", "created_at"):
+            if not isinstance(remediation.get(field), str) or not remediation[field].strip():
+                raise ValueError("remediation %s.%s must be a non-empty string" % (identifier, field))
+        if remediation.get("status") not in REMEDIATION_STATES:
+            raise ValueError("invalid remediation status for %s" % identifier)
+        if remediation.get("fix_task") is not None and (
+            not isinstance(remediation.get("fix_task"), str) or remediation["fix_task"] not in known
+        ):
+            raise ValueError("remediation %s has an unknown fix task" % identifier)
+        attempts = remediation.get("attempts")
+        if not isinstance(attempts, int) or isinstance(attempts, bool) or attempts < 0:
+            raise ValueError("invalid remediation attempts for %s" % identifier)
+        if remediation.get("resolved_at") is not None and not isinstance(remediation.get("resolved_at"), str):
+            raise ValueError("remediation %s.resolved_at must be null or a string" % identifier)
+    if len(remediation_ids) != len(set(remediation_ids)):
+        raise ValueError("state contains duplicate remediation ids")
 
     services = state.get("services", [])
     contracts = state.get("contracts", [])

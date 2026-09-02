@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/settings.schema.json",
+  "title": "Settings schema map",
+  "description": "A map of setting identifiers to schema-driven control definitions.",
+  "type": "object",
+  "patternProperties": {
+    "^[a-z][a-z0-9_]*$": {
+      "$ref": "#/$defs/settingDefinition"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "settingDefinition": {
+      "type": "object",
+      "required": [
+        "type",
+        "label"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "textarea",
+            "toggle",
+            "checkbox",
+            "range",
+            "number",
+            "color",
+            "image",
+            "url",
+            "select",
+            "repeater"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "item_label": {
+          "type": "string",
+          "description": "Label shown for each row of a repeater control. Supported by ControlSanitizer; used by eight legacy element manifests."
+        },
+        "default": {},
+        "help": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "value",
+              "label"
+            ],
+            "properties": {
+              "value": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "fields": {
+          "$ref": "#/$defs/settingsMap"
+        }
+      },
+      "additionalProperties": false
+    },
+    "settingsMap": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/settingDefinition"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

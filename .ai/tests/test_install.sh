@@ -17,6 +17,9 @@ copy_kit() {
   target="$TMP/$name"
   mkdir -p "$target"
   cp -R "$ROOT/.ai" "$target/.ai"
+  # Bytecode caches in the developer's worktree are not part of the kit; pruning them keeps this
+  # fixture about what the INSTALLER creates rather than about what happened to be lying around.
+  find "$target/.ai" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
   printf '%s' "$target"
 }
 
@@ -52,7 +55,11 @@ test ! -e "$NO_GIT/.git"
 grep -Fqx '# existing project ignore' "$NO_GIT/.gitignore"
 test "$(grep -Fxc '.workspace/' "$NO_GIT/.gitignore")" -eq 1
 test "$(sed -n '1p' "$NO_GIT/.gitignore")" = '# existing project ignore'
-test -z "$(find "$NO_GIT" -type d -name __pycache__ -print -quit)"
+stray_cache="$(find "$NO_GIT" -type d -name __pycache__ -print -quit)"
+if [ -n "$stray_cache" ]; then
+  echo "FAIL: bootstrap created a bytecode cache: $stray_cache" >&2
+  exit 1
+fi
 passed "bootstrap preserves a non-newline ignore line and avoids bytecode caches"
 
 snapshot_before="$(tree_snapshot "$NO_GIT")"

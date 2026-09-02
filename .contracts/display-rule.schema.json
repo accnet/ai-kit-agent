@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/display-rule.schema.json",
+  "title": "Display rules",
+  "description": "Rules evaluated by StarterKit\\Rules\\DisplayRuleEvaluator to determine whether a section renders.",
+  "type": "object",
+  "properties": {
+    "include": {
+      "type": "array",
+      "description": "Rules that may make the section visible. When this array is empty or omitted, the section is visible only when entire_site is true.",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "description": "Matching rules always prevent the section from rendering.",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "include_relation": {
+      "type": "string",
+      "enum": [
+        "AND",
+        "OR"
+      ],
+      "description": "How include rules are combined. The evaluator defaults to OR when omitted and uppercases the supplied value."
+    },
+    "exclude_relation": {
+      "type": "string",
+      "enum": [
+        "AND",
+        "OR"
+      ],
+      "description": "How exclude rules are combined. The evaluator defaults to OR when omitted and uppercases the supplied value."
+    },
+    "entire_site": {
+      "type": "boolean",
+      "description": "Makes the section visible across the site when include is empty, unless scheduling, device, or exclude rules prevent it."
+    },
+    "start_date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Inclusive schedule start date in the Y-m-d format expected by the evaluator, for example 2026-08-26."
+    },
+    "end_date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Inclusive schedule end date in the Y-m-d format expected by the evaluator, for example 2026-08-26."
+    },
+    "device": {
+      "type": "string",
+      "description": "Device visibility: all or an empty string matches every device; any other value must exactly match context.device."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "description": "One rule evaluated against the resolved page context.",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "entire_site",
+            "homepage",
+            "page_id",
+            "post_type",
+            "page_template",
+            "all_products",
+            "single_product",
+            "product_id",
+            "product_category",
+            "product_tag",
+            "product_archive",
+            "all_product_archives",
+            "shop_page",
+            "logged_in",
+            "guest",
+            "device",
+            "taxonomy_term"
+          ]
+        },
+        "value": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

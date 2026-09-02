@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/block.schema.json",
+  "title": "Block manifest",
+  "description": "Schema for a Shopify OS 2.0-style block manifest.",
+  "type": "object",
+  "required": [
+    "schema",
+    "type",
+    "settings"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 1
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "label": {
+      "type": "string"
+    },
+    "settings": {
+      "$ref": "settings.schema.json"
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "css": {
+          "$ref": "#/$defs/assetPathOrPaths"
+        },
+        "js": {
+          "$ref": "#/$defs/assetPathOrPaths"
+        }
+      },
+      "additionalProperties": false
+    },
+    "allowed_sections": {
+      "type": "array",
+      "description": "Section types that permit this block. An empty array means no section currently accepts the block. The meaning of the \"*\" wildcard versus an explicit section type, and the cross-manifest placement predicate, are runtime invariants enforced by inc/Blocks/BlockSchema.php and inc/Sections/SectionSchema.php, not by this schema.",
+      "uniqueItems": true,
+      "items": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          },
+          {
+            "const": "*"
+          }
+        ]
+      }
+    },
+    "inserter": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the Builder offers this registered block for new insertion. False does not invalidate or disable rendering of stored instances."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "assetPathOrPaths": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  }
+}

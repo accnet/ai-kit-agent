@@ -42,3 +42,12 @@ Every Reviewer task; engineers may load it for self-review before handoff.
 
 ## Output
 Verdict (approve / request changes) + findings list, recorded in tasks.md.
+
+## Remediation handoff
+
+Major/blocker findings must be handed to the coordinator as a remediation
+record containing source task, exact criterion, severity, reproduction,
+affected files, and suggested owner. The coordinator chooses a bounded retry
+when the finding stays within the task scope; otherwise the coordinator adds a
+new linked fix task during replan. Reviewers never edit `state.json` or
+`tasks.md`, and a finding is closed only after the fix passes QA/G2 and review/G3.

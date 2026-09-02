@@ -37,11 +37,14 @@ from policy import (  # noqa: E402
     PolicyError,
     changed_files_in_scope,
     normalize_plan,
+    plan_revision_digest,
+    task_action_digest,
 )
 from projection import render_plan, render_tasks  # noqa: E402
 from providers import (  # noqa: E402
     ClaudeProvider,
     CodexProvider,
+    GrokProvider,
     ProviderError,
     ProviderRequest,
     ScriptedProvider,
@@ -112,7 +115,7 @@ def multi_service_plan(*tasks):
                 "version": "1.0.0",
                 "owner": "order-service",
                 "status": "draft",
-                "source": "contracts/checkout.yaml",
+                "source": ".contracts/checkout.yaml",
                 "source_hash": "pending",
                 "producers": ["order-service"],
                 "consumers": ["checkout-bff"],
@@ -164,8 +167,8 @@ class HarnessCase(unittest.TestCase):
         (self.root / ".ai" / "knowledge" / "conventions.md").write_text(
             "Use standard library.\n", encoding="utf-8"
         )
-        (self.root / "contracts").mkdir()
-        (self.root / "contracts" / "checkout.yaml").write_text(
+        (self.root / ".contracts").mkdir()
+        (self.root / ".contracts" / "checkout.yaml").write_text(
             "openapi: 3.1.0\ninfo:\n  title: Checkout\n  version: 1.0.0\n",
             encoding="utf-8",
         )
@@ -281,6 +284,41 @@ class HarnessCase(unittest.TestCase):
         )
         self.assertEqual(state["plan_revision"], 2)
         self.assertEqual(HarnessEngine(RepositoryStore(self.root)).next_task("demo")["id"], "T2")
+
+    def test_feature_dependency_blocks_canonical_readiness_until_target_completes(self):
+        self.initialize()
+        target = self.root / ".project" / "baseline"
+        target.mkdir(parents=True)
+        (target / "state.json").write_text(
+            json.dumps({"feature": "baseline", "tasks": [{"id": "T9", "state": "ready"}]}),
+            encoding="utf-8",
+        )
+        state = self.engine.apply_plan(
+            "demo",
+            {"summary": "wait for baseline", "feature_dependencies": [{"feature": "baseline", "task": "T9"}], "tasks": [task(1)]},
+        )
+        self.assertEqual(state["tasks"][0]["state"], "proposed")
+        self.assertIn("unfinished canonical", state["tasks"][0]["feature_dependency_block"])
+        self.assertIsNone(self.engine.next_task("demo"))
+        (target / "state.json").write_text(
+            json.dumps({"feature": "baseline", "tasks": [{"id": "T9", "state": "complete"}]}),
+            encoding="utf-8",
+        )
+        self.assertEqual(self.engine.next_task("demo")["id"], "T1")
+
+    def test_optional_v016_fields_preserve_legacy_digests_when_empty(self):
+        self.initialize()
+        state = self.engine.apply_plan("demo", {"summary": "legacy digest", "tasks": [task(1)]})
+        baseline_plan = plan_revision_digest(state)
+        baseline_task = task_action_digest(state, state["tasks"][0])
+        state["feature_dependencies"] = []
+        state["tasks"][0]["verification_profiles"] = []
+        self.assertEqual(plan_revision_digest(state), baseline_plan)
+        self.assertEqual(task_action_digest(state, state["tasks"][0]), baseline_task)
+        state["feature_dependencies"] = [{"feature": "baseline", "task": "T1"}]
+        state["tasks"][0]["verification_profiles"] = ["ai-kit"]
+        self.assertNotEqual(plan_revision_digest(state), baseline_plan)
+        self.assertNotEqual(task_action_digest(state, state["tasks"][0]), baseline_task)
 
     def test_requirement_traceability_rejects_gaps_and_unknown_refs(self):
         self.engine.initialize(
@@ -593,7 +631,7 @@ class HarnessCase(unittest.TestCase):
             ),
         )
         self.engine.approve_contract("demo", reference, approved_by="fixture-user")
-        (self.root / "contracts" / "checkout.yaml").write_text(
+        (self.root / ".contracts" / "checkout.yaml").write_text(
             "openapi: 3.1.0\ninfo:\n  title: Changed\n  version: 1.0.0\n",
             encoding="utf-8",
         )
@@ -610,7 +648,7 @@ class HarnessCase(unittest.TestCase):
             task(
                 1,
                 owner="architect",
-                files=["contracts/checkout.yaml"],
+                files=[".contracts/checkout.yaml"],
                 risks=["public-contract"],
                 layer="api",
                 contract_writes=[reference],
@@ -636,7 +674,7 @@ class HarnessCase(unittest.TestCase):
                     "detail": "schema check passed",
                 }
             ],
-            "changed_files": ["contracts/checkout.yaml"],
+            "changed_files": [".contracts/checkout.yaml"],
             "memory": [],
         }
 
@@ -645,7 +683,7 @@ class HarnessCase(unittest.TestCase):
 
             def invoke(inner_self, request):
                 del inner_self, request
-                (self.root / "contracts" / "checkout.yaml").write_text(
+                (self.root / ".contracts" / "checkout.yaml").write_text(
                     "openapi: 3.1.0\ninfo:\n  title: Checkout v1\n  version: 1.0.0\n",
                     encoding="utf-8",
                 )
@@ -673,7 +711,7 @@ class HarnessCase(unittest.TestCase):
                 task(
                     1,
                     owner="architect",
-                    files=["contracts/checkout.yaml"],
+                    files=[".contracts/checkout.yaml"],
                     risks=["public-contract"],
                     contract_writes=[reference],
                     criterion="contract source changes",
@@ -690,7 +728,7 @@ class HarnessCase(unittest.TestCase):
                     "detail": "claimed",
                 }
             ],
-            "changed_files": ["contracts/checkout.yaml"],
+            "changed_files": [".contracts/checkout.yaml"],
             "memory": [],
         }
         with self.assertRaises(PolicyError):
@@ -776,7 +814,7 @@ class HarnessCase(unittest.TestCase):
     def test_contract_source_rejects_internal_symlink_component(self):
         self.initialize()
         reference = "checkout.api@1.0.0"
-        (self.root / "contract-link").symlink_to(self.root / "contracts", target_is_directory=True)
+        (self.root / ".contracts" / "contract-link").symlink_to(self.root / ".contracts", target_is_directory=True)
         plan = multi_service_plan(
             task(
                 1,
@@ -785,7 +823,7 @@ class HarnessCase(unittest.TestCase):
                 contract_reads=[reference],
             )
         )
-        plan["contracts"][0]["source"] = "contract-link/checkout.yaml"
+        plan["contracts"][0]["source"] = ".contracts/contract-link/checkout.yaml"
         self.engine.apply_plan("demo", plan)
         with self.assertRaises(ContractStale):
             self.engine.approve_contract("demo", reference, approved_by="fixture-user")
@@ -796,7 +834,7 @@ class HarnessCase(unittest.TestCase):
             task(
                 1,
                 owner="architect",
-                files=["contracts/checkout.yaml"],
+                files=[".contracts/checkout.yaml"],
                 risks=["public-contract"],
                 contract_writes=[reference],
             ),
@@ -810,7 +848,7 @@ class HarnessCase(unittest.TestCase):
         wrong_writer = multi_service_plan(
             task(
                 1,
-                files=["contracts/checkout.yaml"],
+                files=[".contracts/checkout.yaml"],
                 risks=["public-contract"],
                 service="order-service",
                 contract_writes=[reference],
@@ -858,6 +896,10 @@ class HarnessCase(unittest.TestCase):
             task(1, owner="qa", files=["tests/integration.py"])
         )
         missing_producer_dependency["services"][1]["dependencies"] = []
+        internal_contract_source = multi_service_plan(
+            task(1, owner="qa", files=["tests/integration.py"])
+        )
+        internal_contract_source["contracts"][0]["source"] = ".AI/contracts/runtime.json"
         for candidate in (
             missing_dependency,
             wrong_writer,
@@ -866,6 +908,7 @@ class HarnessCase(unittest.TestCase):
             overlapping_paths,
             missing_service_participation,
             missing_producer_dependency,
+            internal_contract_source,
         ):
             with self.subTest(summary=candidate["tasks"][0]["title"]):
                 with self.assertRaises(PolicyError):
@@ -1035,6 +1078,37 @@ class HarnessCase(unittest.TestCase):
                         "required": True,
                         "independent_enabled": False,
                     },
+                    "orchestration": {
+                        "mode": "ide-native-workers",
+                        "enabled": True,
+                        "max_workers": 4,
+                        "require_dag": True,
+                        "require_disjoint_files": True,
+                        "coordinator_owns_task_state": True,
+                        "require_worktree_per_worker": True,
+                    },
+                    "execution": {
+                        "task_cli": {
+                            "enabled": True,
+                            "provider": "grok",
+                            "model": None,
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(EngineError, "must name a configured provider"):
+            load_config(self.root)
+
+        kit_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "review": {
+                        "required": True,
+                        "independent_enabled": False,
+                    },
                     "execution": {
                         "codex_cli": {
                             "enabled": "false",
@@ -1153,6 +1227,15 @@ class HarnessCase(unittest.TestCase):
                         },
                         "isolated_worktree": {"required": True},
                     },
+                    "orchestration": {
+                        "mode": "ide-native-workers",
+                        "enabled": True,
+                        "max_workers": 4,
+                        "require_dag": True,
+                        "require_disjoint_files": True,
+                        "coordinator_owns_task_state": True,
+                        "require_worktree_per_worker": True,
+                    },
                     "quality": quality_policy(),
                 }
             ),
@@ -1189,6 +1272,15 @@ class HarnessCase(unittest.TestCase):
                 {
                     "schema_version": 1,
                     "review": {"required": True, "independent_enabled": False},
+                    "orchestration": {
+                        "mode": "ide-native-workers",
+                        "enabled": True,
+                        "max_workers": 4,
+                        "require_dag": True,
+                        "require_disjoint_files": True,
+                        "coordinator_owns_task_state": True,
+                        "require_worktree_per_worker": True,
+                    },
                     "execution": {
                         "isolated_worktree": {"required": True},
                         "codex_cli": {
@@ -1310,6 +1402,54 @@ class HarnessCase(unittest.TestCase):
         selected = task_provider_from_args(explicit, self.root, config)
         self.assertEqual(selected.name, "codex")
         self.assertIsNone(selected.model)
+
+    def test_grok_task_cli_execution_is_automatic_only_for_implementers(self):
+        config = {
+            "provider_output_limit_chars": 200_000,
+            "providers": {
+                "codex": {"executable": "codex", "model": None, "timeout_seconds": 1200},
+                "claude": {"executable": "claude", "model": None, "timeout_seconds": 1200},
+                "grok": {"executable": "grok", "model": None, "timeout_seconds": 1200},
+            },
+            "kit_policy": {
+                "execution": {
+                    "task_cli": {"enabled": True, "provider": "grok", "model": None}
+                },
+                "quality": quality_policy(),
+            },
+        }
+        automatic = argparse.Namespace(provider=None, response=None)
+        selected = task_provider_from_args(automatic, self.root, config)
+        self.assertEqual((selected.name, selected.model), ("grok", None))
+        command = selected.provider.command_preview(
+            ProviderRequest("implementer", "execute one task", PLAN_SCHEMA)
+        )
+        self.assertIn("acceptEdits", command)
+
+        for conflicting in ("codex", "claude", "scripted"):
+            with self.subTest(conflicting=conflicting):
+                with self.assertRaisesRegex(EngineError, "only accepts --provider grok"):
+                    task_provider_from_args(
+                        argparse.Namespace(provider=conflicting, response=None),
+                        self.root,
+                        config,
+                    )
+        with self.assertRaisesRegex(EngineError, "--response is unavailable"):
+            task_provider_from_args(
+                argparse.Namespace(provider=None, response="response.json"),
+                self.root,
+                config,
+            )
+
+        config["kit_policy"]["execution"]["task_cli"]["enabled"] = False
+        with self.assertRaisesRegex(EngineError, "pass --provider explicitly"):
+            task_provider_from_args(automatic, self.root, config)
+        self.assertEqual(
+            task_provider_from_args(
+                argparse.Namespace(provider="grok", response=None), self.root, config
+            ).name,
+            "grok",
+        )
 
     def test_quality_routes_select_both_clis_without_provider_calls(self):
         config = {
@@ -1510,6 +1650,7 @@ class HarnessCase(unittest.TestCase):
     def test_native_provider_context_deduplicates_project_instructions(self):
         self.assertTrue(CodexProvider(self.root).loads_project_instructions)
         self.assertTrue(ClaudeProvider(self.root).loads_project_instructions)
+        self.assertTrue(GrokProvider(self.root).loads_project_instructions)
         self.initialize()
         plan = {"summary": "native context plan", "tasks": [task(1)]}
         native = ScriptedProvider([plan])
@@ -1581,6 +1722,14 @@ class HarnessCase(unittest.TestCase):
                 )
                 self.assertIn("`%s` skill" % workflow, prompt)
                 self.assertIn("`%s` owner contract" % contract, prompt)
+                self.assertIn(json.dumps(EXECUTION_SCHEMA, separators=(",", ":")), prompt)
+
+        review_prompt = HarnessEngine._review_prompt(
+            {"goal": "bounded review", "services": [], "contracts": []},
+            task(1, owner="reviewer"),
+            "context",
+        )
+        self.assertIn(json.dumps(REVIEW_SCHEMA, separators=(",", ":")), review_prompt)
 
     def test_effort_and_claude_reviewer_tools_are_explicit_offline(self):
         configured = ConfiguredProvider(
@@ -1621,6 +1770,148 @@ class HarnessCase(unittest.TestCase):
             planner_command[planner_command.index("--tools") + 1],
             "Read,Glob,Grep",
         )
+
+    def test_grok_structured_command_modes_and_wrappers_are_explicit_offline(self):
+        provider = GrokProvider(self.root)
+        for role, schema, permission in (
+            ("planner", PLAN_SCHEMA, "plan"),
+            ("reviewer", REVIEW_SCHEMA, "plan"),
+            ("implementer", EXECUTION_SCHEMA, "acceptEdits"),
+        ):
+            with self.subTest(role=role):
+                request = ProviderRequest(
+                    role,
+                    "return a structured response",
+                    schema,
+                    model="grok-test-model",
+                    reasoning_effort="high",
+                )
+                command = provider.command_preview(request)
+                self.assertEqual(command[:2], ["grok", "--prompt-file"])
+                self.assertEqual(command[2], "/tmp/ai-kit-prompt.md")
+                self.assertEqual(command[command.index("--cwd") + 1], str(self.root))
+                self.assertEqual(command[command.index("--output-format") + 1], "json")
+                self.assertEqual(command[command.index("--permission-mode") + 1], permission)
+                self.assertIn("--always-approve", command)
+                self.assertEqual(command[command.index("--max-turns") + 1], "20")
+                self.assertEqual(command[command.index("--model") + 1], "grok-test-model")
+                self.assertEqual(command[command.index("--reasoning-effort") + 1], "high")
+                # Grok's native schema mode cancels after intermediate
+                # reasoning messages; the provider validates the canonical
+                # schema after parsing the final JSON envelope instead.
+                self.assertNotIn("--json-schema", command)
+
+        response = {"summary": "wrapped plan", "tasks": [task(1)]}
+        for stdout in (
+            json.dumps(response),
+            json.dumps({"structured_output": response}),
+            json.dumps({"result": json.dumps(response)}),
+        ):
+            with self.subTest(stdout=stdout):
+                with patch(
+                    "providers.subprocess.run",
+                    return_value=subprocess.CompletedProcess([], 0, stdout=stdout, stderr=""),
+                ):
+                    self.assertEqual(
+                        provider.invoke(ProviderRequest("planner", "plan", PLAN_SCHEMA)),
+                        response,
+                    )
+
+        nested_final = {
+            "outcome": "success",
+            "summary": "nested final response",
+            "evidence": [
+                {"criterion": "command passed", "result": "pass", "detail": "ok"}
+            ],
+            "changed_files": [],
+            "memory": [{"kind": "episodic", "content": "proof", "tags": ["test"]}],
+        }
+        self.assertEqual(
+            provider.parse_output(
+                json.dumps({"text": "Done. " + json.dumps(nested_final)})
+            ),
+            nested_final,
+        )
+
+        final = {
+            "outcome": "success",
+            "summary": "completed after resume",
+            "evidence": [],
+            "changed_files": [],
+            "memory": [],
+        }
+        incomplete = {
+            "text": "I am still working.",
+            "stopReason": "cancelled",
+            "sessionId": "grok-session-1",
+        }
+        completed = {
+            "text": "Done. " + json.dumps(final),
+            "stopReason": "end_turn",
+            "sessionId": "grok-session-1",
+        }
+        with patch(
+            "providers.subprocess.run",
+            side_effect=[
+                subprocess.CompletedProcess([], 0, stdout=json.dumps(incomplete), stderr=""),
+                subprocess.CompletedProcess([], 0, stdout=json.dumps(completed), stderr=""),
+            ],
+        ) as run:
+            self.assertEqual(
+                provider.invoke(ProviderRequest("implementer", "work", EXECUTION_SCHEMA)),
+                final,
+            )
+        resume_command = run.call_args_list[1].args[0]
+        self.assertEqual(
+            resume_command[resume_command.index("--resume") + 1], "grok-session-1"
+        )
+
+        provider.max_resumes = 0
+        with patch(
+            "providers.subprocess.run",
+            return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(incomplete), stderr=""),
+        ):
+            with self.assertRaisesRegex(
+                ProviderError,
+                r"Grok session incomplete; stop_reason=cancelled session_id=grok-session-1",
+            ):
+                provider.invoke(ProviderRequest("implementer", "work", EXECUTION_SCHEMA))
+
+        still_incomplete = {
+            "text": "The resumed session also needs more turns.",
+            "stopReason": "max_turns",
+            "sessionId": "grok-session-2",
+        }
+        retrying_provider = GrokProvider(self.root)
+        with patch(
+            "providers.subprocess.run",
+            side_effect=[
+                subprocess.CompletedProcess([], 0, stdout=json.dumps(incomplete), stderr=""),
+                subprocess.CompletedProcess([], 0, stdout=json.dumps(still_incomplete), stderr=""),
+            ],
+        ):
+            with self.assertRaisesRegex(
+                ProviderError,
+                r"stop_reason=cancelled session_id=grok-session-1.*"
+                r"stop_reason=max_turns session_id=grok-session-2",
+            ):
+                retrying_provider.invoke(
+                    ProviderRequest("implementer", "work", EXECUTION_SCHEMA)
+                )
+
+        with patch(
+            "providers.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                [], 1, stdout="", stderr="Error: max turns reached"
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ProviderError,
+                r"Grok session incomplete; stop_reason=max_turns session_id=unknown",
+            ):
+                GrokProvider(self.root).invoke(
+                    ProviderRequest("implementer", "work", EXECUTION_SCHEMA)
+                )
 
     def test_review_provider_repository_mutation_fails_closed(self):
         self.initialize()
@@ -1725,7 +2016,7 @@ class HarnessCase(unittest.TestCase):
 
     def test_provider_commands_safe_without_execution(self):
         request = ProviderRequest("planner", "create a plan", PLAN_SCHEMA, timeout_seconds=10)
-        for provider in (CodexProvider(self.root), ClaudeProvider(self.root)):
+        for provider in (CodexProvider(self.root), ClaudeProvider(self.root), GrokProvider(self.root)):
             with self.subTest(provider=provider.name):
                 command = provider.command_preview(request)
                 joined = " ".join(command).lower()
@@ -1773,7 +2064,7 @@ class HarnessCase(unittest.TestCase):
                 "planner", "create a plan", PLAN_SCHEMA, working_directory=linked
             )
 
-    def test_codex_and_claude_subprocesses_use_request_working_directory(self):
+    def test_native_subprocesses_use_request_working_directory(self):
         workspace = self.root / "provider-workspace"
         workspace.mkdir()
         request = ProviderRequest(
@@ -1790,11 +2081,13 @@ class HarnessCase(unittest.TestCase):
                 output_path = Path(command[command.index("--output-last-message") + 1])
                 output_path.write_text(json.dumps(response), encoding="utf-8")
                 stdout = ""
-            else:
+            elif command[0] == "claude":
                 stdout = json.dumps({"structured_output": response})
+            else:
+                stdout = json.dumps(response)
             return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
 
-        for provider in (CodexProvider(self.root), ClaudeProvider(self.root)):
+        for provider in (CodexProvider(self.root), ClaudeProvider(self.root), GrokProvider(self.root)):
             with self.subTest(provider=provider.name):
                 with patch("providers.subprocess.run", side_effect=completed):
                     self.assertEqual(provider.invoke(request), response)
@@ -1871,17 +2164,21 @@ class HarnessCase(unittest.TestCase):
         small = ProviderRequest("planner", "create a plan", PLAN_SCHEMA, max_output_chars=256)
         with self.assertRaises(ProviderError):
             ScriptedProvider(["{" + "x" * 300 + "}"]).invoke(small)
-        provider = CodexProvider(self.root, executable="never-run-codex")
         failed = subprocess.CompletedProcess([], 7, stdout="", stderr="provider failure")
-        with patch("providers.subprocess.run", return_value=failed):
-            with self.assertRaises(ProviderError):
-                provider.invoke(request)
-        with patch(
-            "providers.subprocess.run",
-            side_effect=subprocess.TimeoutExpired(cmd="never-run-codex", timeout=1),
+        for provider in (
+            CodexProvider(self.root, executable="never-run-codex"),
+            GrokProvider(self.root, executable="never-run-grok"),
         ):
-            with self.assertRaises(ProviderError):
-                provider.invoke(request)
+            with self.subTest(provider=provider.name):
+                with patch("providers.subprocess.run", return_value=failed):
+                    with self.assertRaises(ProviderError):
+                        provider.invoke(request)
+                with patch(
+                    "providers.subprocess.run",
+                    side_effect=subprocess.TimeoutExpired(cmd=provider.executable, timeout=1),
+                ):
+                    with self.assertRaises(ProviderError):
+                        provider.invoke(request)
 
 
 class GitWorkspaceManagerCase(unittest.TestCase):

@@ -1,4 +1,4 @@
-"""Safe structured-output adapters for scripted, Codex, and Claude providers."""
+"""Safe structured-output adapters for scripted, Codex, Claude, and Grok providers."""
 
 from __future__ import annotations
 
@@ -96,13 +96,27 @@ class SubprocessProvider:
         self.executable = executable
 
     def command_preview(self, request: ProviderRequest) -> List[str]:
-        return self.build_command(request, Path("/tmp/ai-kit-schema.json"), Path("/tmp/ai-kit-output.json"))
+        return self.build_command(
+            request,
+            Path("/tmp/ai-kit-schema.json"),
+            Path("/tmp/ai-kit-output.json"),
+            Path("/tmp/ai-kit-prompt.md"),
+        )
 
     def request_root(self, request: ProviderRequest) -> Path:
         return request.working_directory or self.root
 
-    def build_command(self, request: ProviderRequest, schema_path: Path, output_path: Path) -> List[str]:
+    def build_command(
+        self,
+        request: ProviderRequest,
+        schema_path: Path,
+        output_path: Path,
+        prompt_path: Path,
+    ) -> List[str]:
         raise NotImplementedError
+
+    def stdin_input(self, request: ProviderRequest) -> Optional[str]:
+        return request.prompt
 
     def output_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         return schema
@@ -118,38 +132,51 @@ class SubprocessProvider:
             temp = Path(directory)
             schema_path = temp / "schema.json"
             output_path = temp / "output.json"
+            prompt_path = temp / "prompt.md"
             schema_path.write_text(
                 json.dumps(self.output_schema(request.schema)), encoding="utf-8"
             )
-            command = self.build_command(request, schema_path, output_path)
-            self._assert_safe_command(command)
-            try:
-                result = subprocess.run(
-                    command,
-                    input=request.prompt,
-                    text=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    cwd=str(self.request_root(request)),
-                    timeout=request.timeout_seconds,
-                    check=False,
-                )
-            except FileNotFoundError as exc:
-                raise ProviderError("provider executable not found: %s" % self.executable) from exc
-            except subprocess.TimeoutExpired as exc:
-                raise ProviderError("provider timed out after %d seconds" % request.timeout_seconds) from exc
-            if result.returncode != 0:
-                detail = result.stderr.strip()[-2000:]
-                raise ProviderError("provider exited %d: %s" % (result.returncode, detail or "no error output"))
-            raw = self.extract_output(result.stdout, output_path)
-            if len(raw) > request.max_output_chars:
-                raise ProviderError("provider output exceeds configured limit")
+            prompt_path.write_text(request.prompt, encoding="utf-8")
+            command = self.build_command(request, schema_path, output_path, prompt_path)
+            raw = self._run_subprocess(request, command, output_path)
             value = self.normalize_output(self.parse_output(raw), request.schema)
             try:
                 validate(value, request.schema)
             except SchemaError as exc:
                 raise ProviderError("provider output violates schema: %s" % exc) from exc
             return value
+
+    def _run_subprocess(
+        self,
+        request: ProviderRequest,
+        command: Sequence[str],
+        output_path: Path,
+    ) -> str:
+        """Run one provider command and return its bounded raw output."""
+
+        self._assert_safe_command(command)
+        try:
+            result = subprocess.run(
+                command,
+                input=self.stdin_input(request),
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=str(self.request_root(request)),
+                timeout=request.timeout_seconds,
+                check=False,
+            )
+        except FileNotFoundError as exc:
+            raise ProviderError("provider executable not found: %s" % self.executable) from exc
+        except subprocess.TimeoutExpired as exc:
+            raise ProviderError("provider timed out after %d seconds" % request.timeout_seconds) from exc
+        if result.returncode != 0:
+            detail = result.stderr.strip()[-2000:]
+            raise ProviderError("provider exited %d: %s" % (result.returncode, detail or "no error output"))
+        raw = self.extract_output(result.stdout, output_path)
+        if len(raw) > request.max_output_chars:
+            raise ProviderError("provider output exceeds configured limit")
+        return raw
 
     def extract_output(self, stdout: str, output_path: Path) -> str:
         return output_path.read_text(encoding="utf-8") if output_path.is_file() else stdout
@@ -188,7 +215,14 @@ class CodexProvider(SubprocessProvider):
             raise ProviderError("provider output must be a JSON object")
         return normalized
 
-    def build_command(self, request: ProviderRequest, schema_path: Path, output_path: Path) -> List[str]:
+    def build_command(
+        self,
+        request: ProviderRequest,
+        schema_path: Path,
+        output_path: Path,
+        prompt_path: Path,
+    ) -> List[str]:
+        del prompt_path
         sandbox = "workspace-write" if request.role == "implementer" else "read-only"
         command = [
             self.executable,
@@ -261,8 +295,14 @@ class ClaudeProvider(SubprocessProvider):
     def __init__(self, root: Path, executable: str = "claude") -> None:
         super().__init__(root, executable)
 
-    def build_command(self, request: ProviderRequest, schema_path: Path, output_path: Path) -> List[str]:
-        del schema_path, output_path
+    def build_command(
+        self,
+        request: ProviderRequest,
+        schema_path: Path,
+        output_path: Path,
+        prompt_path: Path,
+    ) -> List[str]:
+        del schema_path, output_path, prompt_path
         planning = request.role in {"planner", "reviewer"}
         tools = (
             "Read,Glob,Grep"
@@ -315,3 +355,233 @@ class ClaudeProvider(SubprocessProvider):
             if isinstance(parsed, dict):
                 return parsed
         return wrapper
+
+
+class GrokProvider(SubprocessProvider):
+    """Grok Build adapter with bounded continuation for incomplete headless sessions."""
+
+    name = "grok"
+    loads_project_instructions = True
+    max_turns = 20
+    max_resumes = 1
+
+    def __init__(self, root: Path, executable: str = "grok") -> None:
+        super().__init__(root, executable)
+
+    def build_command(
+        self,
+        request: ProviderRequest,
+        schema_path: Path,
+        output_path: Path,
+        prompt_path: Path,
+    ) -> List[str]:
+        # Grok's JSON-schema mode treats every intermediate reasoning message
+        # as a schema response and cancels before tool execution.  The
+        # harness therefore enforces the canonical schema after the session,
+        # while asking the agent for a final JSON object in the prompt.
+        del schema_path, output_path
+        return self._command(request, prompt_path)
+
+    def _command(
+        self,
+        request: ProviderRequest,
+        prompt_path: Path,
+        *,
+        session_id: Optional[str] = None,
+    ) -> List[str]:
+        command = [self.executable]
+        if session_id:
+            command.extend(["--resume", session_id])
+        command.extend([
+            "--prompt-file",
+            str(prompt_path),
+            "--cwd",
+            str(self.request_root(request)),
+            "--output-format",
+            "json",
+            "--permission-mode",
+            "acceptEdits" if request.role == "implementer" else "plan",
+            # Headless Grok sessions otherwise wait for an interactive
+            # permission response; in CI/IDE execution that actor is reaped,
+            # yielding a cancelled response before the task can finish.
+            "--always-approve",
+            # Grok emits an intermediate structured object for each reasoning
+            # turn.  Repository tasks need enough turns to load their bounded
+            # skill/context, edit, verify, and then produce final evidence.
+            "--max-turns",
+            str(self.max_turns),
+        ])
+        if request.model:
+            command.extend(["--model", request.model])
+        if request.reasoning_effort:
+            command.extend(["--reasoning-effort", request.reasoning_effort])
+        self._assert_safe_command(command)
+        return command
+
+    def invoke(self, request: ProviderRequest) -> Dict[str, Any]:
+        with tempfile.TemporaryDirectory(prefix="ai-kit-provider-") as directory:
+            temp = Path(directory)
+            schema_path = temp / "schema.json"
+            output_path = temp / "output.json"
+            prompt_path = temp / "prompt.md"
+            schema_path.write_text(json.dumps(request.schema), encoding="utf-8")
+            prompt_path.write_text(request.prompt, encoding="utf-8")
+
+            raw = self._run_subprocess(
+                request,
+                self.build_command(request, schema_path, output_path, prompt_path),
+                output_path,
+            )
+            diagnostics: List[str] = []
+            for attempt in range(self.max_resumes + 1):
+                terminal = self._terminal_metadata(raw)
+                value = self.normalize_output(self.parse_output(raw), request.schema)
+                try:
+                    validate(value, request.schema)
+                    return value
+                except SchemaError as exc:
+                    detail = self._terminal_diagnostic(terminal, str(exc))
+                    diagnostics.append(detail)
+                    session_id = terminal.get("session_id") if terminal else None
+                    if (
+                        attempt >= self.max_resumes
+                        or not self._is_incomplete_terminal(terminal)
+                        or not session_id
+                    ):
+                        if self._is_incomplete_terminal(terminal):
+                            raise ProviderError(
+                                "Grok session incomplete; %s" % "; ".join(diagnostics)
+                            ) from exc
+                        raise ProviderError(
+                            "Grok terminal output did not contain a schema-valid final result; %s"
+                            % "; ".join(diagnostics)
+                        ) from exc
+
+                    prompt_path.write_text(
+                        self._resume_prompt(request.schema), encoding="utf-8"
+                    )
+                    raw = self._run_subprocess(
+                        request,
+                        self._command(request, prompt_path, session_id=session_id),
+                        output_path,
+                    )
+
+        raise ProviderError("Grok provider exhausted without a terminal result")
+
+    def _run_subprocess(
+        self,
+        request: ProviderRequest,
+        command: Sequence[str],
+        output_path: Path,
+    ) -> str:
+        """Preserve Grok's non-envelope turn-limit failure as a typed diagnostic."""
+
+        try:
+            return super()._run_subprocess(request, command, output_path)
+        except ProviderError as exc:
+            message = str(exc)
+            if "max turn" in message.lower():
+                raise ProviderError(
+                    "Grok session incomplete; stop_reason=max_turns session_id=unknown cli=%s"
+                    % message
+                ) from exc
+            raise
+
+    @staticmethod
+    def _resume_prompt(schema: Dict[str, Any]) -> str:
+        return (
+            "Continue the existing bounded task now. Do not repeat context gathering or describe "
+            "progress. Finish any remaining tool work, run the required verification, and then return "
+            "exactly one final JSON object matching this schema:\n"
+            + json.dumps(schema, separators=(",", ":"))
+        )
+
+    @staticmethod
+    def _terminal_metadata(raw: str) -> Optional[Dict[str, str]]:
+        try:
+            wrapper = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(wrapper, dict):
+            return None
+        stop_reason = wrapper.get("stopReason", wrapper.get("stop_reason", ""))
+        session_id = wrapper.get("sessionId", wrapper.get("session_id", ""))
+        return {
+            "stop_reason": str(stop_reason).strip().lower(),
+            "session_id": str(session_id).strip(),
+        }
+
+    @staticmethod
+    def _is_incomplete_terminal(terminal: Optional[Dict[str, str]]) -> bool:
+        if not terminal:
+            return False
+        return terminal.get("stop_reason") in {
+            "cancelled",
+            "max_turns",
+            "max_turns_reached",
+            "max_turn_requests",
+        }
+
+    @staticmethod
+    def _terminal_diagnostic(
+        terminal: Optional[Dict[str, str]], schema_error: str
+    ) -> str:
+        if not terminal:
+            return "stop_reason=unknown session_id=unknown schema=%s" % schema_error
+        return "stop_reason=%s session_id=%s schema=%s" % (
+            terminal.get("stop_reason") or "unknown",
+            terminal.get("session_id") or "unknown",
+            schema_error,
+        )
+
+    def stdin_input(self, request: ProviderRequest) -> Optional[str]:
+        del request
+        return None
+
+    def extract_output(self, stdout: str, output_path: Path) -> str:
+        del output_path
+        return stdout
+
+    def parse_output(self, raw: str) -> Dict[str, Any]:
+        value = super().parse_output(raw)
+        # Grok Build currently emits camelCase envelope keys (`structuredOutput`
+        # and `text`) while older builds used the snake_case/result keys. Accept
+        # both wire formats and normalize them before schema validation.
+        for key in ("structured_output", "structuredOutput"):
+            structured = value.get(key)
+            if isinstance(structured, dict):
+                return structured
+        for key in ("result", "text"):
+            result = value.get(key)
+            if isinstance(result, str):
+                try:
+                    parsed = json.loads(result)
+                except json.JSONDecodeError:
+                    # Some Grok Build releases stream several complete JSON
+                    # objects into the `text` field (one per reasoning turn).
+                    # Decode all adjacent objects and keep the final one,
+                    # which is the only object that represents the completed
+                    # task rather than an intermediate progress update.
+                    decoder = json.JSONDecoder()
+                    parsed = None
+                    parsed_length = 0
+                    # The final response can contain a short progress
+                    # sentence before the JSON object. Scan each opening
+                    # brace and retain the largest complete object. Retaining
+                    # the last object would select a nested `evidence` or
+                    # `memory` item from an otherwise valid final result.
+                    for index, character in enumerate(result):
+                        if character != "{":
+                            continue
+                        try:
+                            candidate, end = decoder.raw_decode(result[index:])
+                        except json.JSONDecodeError:
+                            continue
+                        if isinstance(candidate, dict) and end > parsed_length:
+                            parsed = candidate
+                            parsed_length = end
+                    if parsed is None:
+                        continue
+                if isinstance(parsed, dict):
+                    return parsed
+        return value

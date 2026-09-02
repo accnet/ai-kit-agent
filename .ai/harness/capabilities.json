@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "safety_floor": ["planning", "file_scope", "approval", "testing", "review", "credential_restrictions", "destructive_approval"],
+  "capabilities": {
+    "service_ownership": {"requires": [], "conflicts": []},
+    "contract_graph": {"requires": ["service_ownership"], "conflicts": []},
+    "contract_compatibility": {"requires": ["contract_graph"], "conflicts": []},
+    "database_safety": {"requires": ["service_ownership"], "conflicts": []},
+    "integration_qa": {"requires": ["contract_graph"], "conflicts": []},
+    "release_ordering": {"requires": ["service_ownership"], "conflicts": []},
+    "distributed_coordinator": {"requires": [], "conflicts": []}
+  }
+}

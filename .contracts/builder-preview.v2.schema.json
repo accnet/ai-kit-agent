@@ -1,0 +1,648 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/builder-preview.v2.schema.json",
+  "title": "Builder Preview HTTP and iframe protocol v2",
+  "description": "Versioned no-store Preview protocol. Render messages use one immutable Header/Page/Footer snapshot; bridge messages carry revision and explicit Container/Column/Block ownership.",
+  "x-starterkit-contract": {
+    "contractId": "starterkit.builder-preview@2.0.0",
+    "version": 2,
+    "status": "draft",
+    "sourceHash": "pending",
+    "compatibility": "none",
+    "changeType": "breaking",
+    "owner": "theme-builder-preview-v2",
+    "writerTask": "os2-grid-first-theme-v2/T1",
+    "producers": [
+      "theme-builder-v2",
+      "preview-document-controller-v2",
+      "preview-iframe-bridge-v2"
+    ],
+    "consumers": [
+      "theme-builder-v2",
+      "preview-document-controller-v2",
+      "preview-iframe-bridge-v2"
+    ],
+    "permissions": "HTTP render requests require the existing Theme Builder capability and REST nonce; iframe messages require exact origin, source window, contractVersion, and accepted revision.",
+    "ordering": "Revisions increase per Builder instance; stale responses/messages are ignored and never replace the last accepted document.",
+    "idempotency": "Render requests are read-only and no-store. Repeating the same revision and payload performs no persistence write.",
+    "rollout": "The v2 endpoint and bridge register only inside the complete v2 runtime graph after contract approval.",
+    "rollback": "Select runtime v1; the v1 Preview endpoint and protocol remain untouched."
+  },
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string"
+    },
+    "contractVersion": {
+      "type": "integer",
+      "const": 2
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "surface": {
+      "$ref": "#/$defs/surface"
+    },
+    "documents": {
+      "$ref": "#/$defs/documents"
+    },
+    "parentOrigin": {
+      "$ref": "#/$defs/origin"
+    },
+    "html": {
+      "type": "string"
+    },
+    "status": {
+      "type": "integer"
+    },
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "details": {
+      "type": "object"
+    },
+    "owner": {
+      "$ref": "#/$defs/selectionOwner"
+    },
+    "settingKey": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    },
+    "repeaterIndex": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "repeaterField": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cancelled": {
+      "type": "boolean"
+    },
+    "toColumnId": {
+      "$ref": "template.v2.schema.json#/$defs/instanceId"
+    },
+    "toIndex": {
+      "type": "integer"
+    },
+    "x": {
+      "type": "number"
+    },
+    "y": {
+      "type": "number"
+    },
+    "scroll": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "$ref": "#/$defs/renderRequest"
+    },
+    {
+      "$ref": "#/$defs/renderResponse"
+    },
+    {
+      "$ref": "#/$defs/renderError"
+    },
+    {
+      "$ref": "#/$defs/readyMessage"
+    },
+    {
+      "$ref": "#/$defs/scrollMessage"
+    },
+    {
+      "$ref": "#/$defs/selectMessage"
+    },
+    {
+      "$ref": "#/$defs/editMessage"
+    },
+    {
+      "$ref": "#/$defs/moveBlockMessage"
+    },
+    {
+      "$ref": "#/$defs/selectionMessage"
+    },
+    {
+      "$ref": "#/$defs/clearSelectionMessage"
+    },
+    {
+      "$ref": "#/$defs/restoreScrollMessage"
+    }
+  ],
+  "$defs": {
+    "baseMessageProperties": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision"
+      ]
+    },
+    "surface": {
+      "type": "object",
+      "required": [
+        "templateId",
+        "context",
+        "resourceId"
+      ],
+      "properties": {
+        "templateId": {
+          "$ref": "template.v2.schema.json#/$defs/typeId"
+        },
+        "context": {
+          "type": "string",
+          "enum": [
+            "index",
+            "page",
+            "product",
+            "collection"
+          ]
+        },
+        "resourceId": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "documents": {
+      "type": "object",
+      "required": [
+        "header",
+        "page",
+        "footer"
+      ],
+      "properties": {
+        "header": {
+          "$ref": "template.v2.schema.json"
+        },
+        "page": {
+          "$ref": "template.v2.schema.json"
+        },
+        "footer": {
+          "$ref": "template.v2.schema.json"
+        }
+      },
+      "additionalProperties": false
+    },
+    "origin": {
+      "type": "string",
+      "pattern": "^https?://[A-Za-z0-9.-]+(?::[0-9]{1,5})?$",
+      "maxLength": 255
+    },
+    "renderRequest": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "surface",
+        "documents",
+        "parentOrigin"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-render-request"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "surface": {
+          "$ref": "#/$defs/surface"
+        },
+        "documents": {
+          "$ref": "#/$defs/documents"
+        },
+        "parentOrigin": {
+          "$ref": "#/$defs/origin"
+        }
+      },
+      "additionalProperties": false
+    },
+    "renderResponse": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "html"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-render-response"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "html": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "renderError": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "status",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-render-error"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "type": "integer",
+          "enum": [
+            400,
+            403,
+            409,
+            413,
+            422,
+            500
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid-contract",
+            "invalid-surface",
+            "forbidden",
+            "stale-revision",
+            "payload-too-large",
+            "render-failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "group": {
+      "type": "string",
+      "enum": [
+        "header",
+        "page",
+        "footer"
+      ]
+    },
+    "containerOwner": {
+      "type": "object",
+      "required": [
+        "group",
+        "containerId"
+      ],
+      "properties": {
+        "group": {
+          "$ref": "#/$defs/group"
+        },
+        "containerId": {
+          "$ref": "template.v2.schema.json#/$defs/instanceId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "columnOwner": {
+      "type": "object",
+      "required": [
+        "group",
+        "containerId",
+        "columnId"
+      ],
+      "properties": {
+        "group": {
+          "$ref": "#/$defs/group"
+        },
+        "containerId": {
+          "$ref": "template.v2.schema.json#/$defs/instanceId"
+        },
+        "columnId": {
+          "$ref": "template.v2.schema.json#/$defs/instanceId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "blockOwner": {
+      "type": "object",
+      "required": [
+        "group",
+        "containerId",
+        "columnId",
+        "blockId"
+      ],
+      "properties": {
+        "group": {
+          "$ref": "#/$defs/group"
+        },
+        "containerId": {
+          "$ref": "template.v2.schema.json#/$defs/instanceId"
+        },
+        "columnId": {
+          "$ref": "template.v2.schema.json#/$defs/instanceId"
+        },
+        "blockId": {
+          "$ref": "template.v2.schema.json#/$defs/instanceId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "selectionOwner": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/containerOwner"
+        },
+        {
+          "$ref": "#/$defs/columnOwner"
+        },
+        {
+          "$ref": "#/$defs/blockOwner"
+        }
+      ]
+    },
+    "readyMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-ready"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "scrollMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "x",
+        "y"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-scroll"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "selectMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "owner"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-select"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "owner": {
+          "$ref": "#/$defs/selectionOwner"
+        }
+      },
+      "additionalProperties": false
+    },
+    "editMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "owner",
+        "settingKey",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "starterkit-preview-edit-start",
+            "starterkit-preview-edit",
+            "starterkit-preview-edit-end"
+          ]
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "owner": {
+          "$ref": "#/$defs/blockOwner"
+        },
+        "settingKey": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 96
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 65535
+        },
+        "repeaterIndex": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 99
+        },
+        "repeaterField": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 96
+        },
+        "cancelled": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "moveBlockMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "owner",
+        "toColumnId",
+        "toIndex"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-move-block"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "owner": {
+          "$ref": "#/$defs/blockOwner"
+        },
+        "toColumnId": {
+          "$ref": "template.v2.schema.json#/$defs/instanceId"
+        },
+        "toIndex": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "selectionMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "owner",
+        "scroll"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-selection"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "owner": {
+          "$ref": "#/$defs/selectionOwner"
+        },
+        "scroll": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "clearSelectionMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-clear-selection"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "restoreScrollMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "contractVersion",
+        "revision",
+        "x",
+        "y"
+      ],
+      "properties": {
+        "type": {
+          "const": "starterkit-preview-restore-scroll"
+        },
+        "contractVersion": {
+          "const": 2
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

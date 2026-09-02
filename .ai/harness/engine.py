@@ -12,8 +12,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from memory import MemoryStore
+from dependencies import CrossFeatureDependencyResolver
+from qa_profiles import QaProfileError, QaProfileResolver
 from models import (
     APPROVAL_REQUIRED_RISKS,
+    REMEDIATION_GATES,
+    REMEDIATION_SEVERITIES,
     contract_by_ref,
     contract_ref,
     new_state,
@@ -37,10 +41,17 @@ from policy import (
     task_action_digest,
     validate_contract_readiness,
     validate_scope_roots,
+    validate_remediation_links,
     validate_success,
     validate_verification_command_paths,
 )
 from projection import render_plan, render_tasks, write_projections
+from compatibility import CompatibilityError, compare as compare_contracts
+from capability_config import resolve_plan as resolve_plan_capabilities
+try:
+    from project_contracts import adapter_for
+except ImportError:
+    adapter_for = None
 from providers import ProviderError, ProviderRequest
 from schemas import EXECUTION_SCHEMA, PLAN_SCHEMA, REVIEW_SCHEMA
 from store import RepositoryStore, StoreError
@@ -81,6 +92,8 @@ class HarnessEngine:
         size: str = "standard",
         review_policy: Optional[str] = None,
         actor: str = "user",
+        capabilities: Optional[Sequence[str]] = None,
+        capability_signals: Optional[Sequence[str]] = None,
     ) -> Dict[str, Any]:
         if not goal.strip():
             raise EngineError("goal cannot be empty")
@@ -122,6 +135,12 @@ class HarnessEngine:
                 size=size,
                 review_policy=review_policy,
             )
+            if capabilities is not None:
+                from capability_config import resolve
+                decision = resolve(capabilities, capability_signals or [])
+                decision_path = self.store.feature_dir(feature) / "capabilities.json"
+                state["capability_decision"] = decision
+                self.store.write_json_atomic(decision_path, decision)
             self._commit(state, "initialized", actor, detail="canonical state created")
             return state
 
@@ -171,6 +190,19 @@ class HarnessEngine:
                 ],
             )
             graph = normalize_contract_graph(plan)
+            decision_signals = []
+            prior_proposal = []
+            decision_path = self.store.feature_dir(feature) / "capabilities.json"
+            if decision_path.is_file():
+                try:
+                    prior_decision = json.loads(decision_path.read_text(encoding="utf-8"))
+                    decision_signals = prior_decision.get("signals", [])
+                    prior_proposal = prior_decision.get("provenance", {}).get("proposal", [])
+                except (OSError, json.JSONDecodeError, AttributeError):
+                    decision_signals = []
+            capability_plan = dict(plan)
+            capability_plan["capabilities"] = sorted(set(plan.get("capabilities", [])) | set(prior_proposal))
+            capability_decision = resolve_plan_capabilities(capability_plan, decision_signals)
             if replan:
                 self._validate_completed_contracts(
                     completed,
@@ -198,10 +230,20 @@ class HarnessEngine:
             state["program_id"] = graph["program_id"]
             state["workstream_id"] = graph["workstream_id"]
             state["parent_feature"] = graph["parent_feature"]
+            state["feature_dependencies"] = list(plan.get("feature_dependencies", []))
+            state["capability_decision"] = capability_decision
             state["services"] = graph["services"]
             state["contracts"] = contracts
             state["contract_approvals"] = preserved_approvals
+            remediations = {item.get("id"): item for item in state.get("remediations", [])}
+            for task in tasks:
+                remediation_id = task.get("remediation_id")
+                if remediation_id and remediation_id in remediations and remediations[remediation_id].get("fix_task") is None:
+                    remediations[remediation_id]["fix_task"] = task["id"]
+            validate_remediation_links(state, tasks)
             state["tasks"] = tasks
+            self.store.write_json_atomic(decision_path, capability_decision)
+            self._refresh_feature_barriers(state)
             state["plan_revision"] = int(state.get("plan_revision", 0)) + 1
             state["plan_summary"] = plan["summary"]
             pending_plan_approval = state.get("size") == "large"
@@ -230,6 +272,112 @@ class HarnessEngine:
                 tags=["plan", "revision-%d" % state["plan_revision"]],
                 actor=actor,
                 importance=4,
+            )
+            return state
+
+    def record_remediation(
+        self,
+        feature: str,
+        source_task: str,
+        *,
+        source_gate: str,
+        severity: str,
+        criterion: str,
+        summary: str,
+        retry: bool = False,
+        actor: str = "coordinator",
+    ) -> Dict[str, Any]:
+        """Record a QA/review finding and optionally retry its source task."""
+
+        if source_gate not in REMEDIATION_GATES:
+            raise EngineError("source_gate must be qa or review")
+        if severity not in REMEDIATION_SEVERITIES:
+            raise EngineError("severity must be minor, major, or blocker")
+        criterion = criterion.strip()
+        summary = summary.strip()
+        if not criterion or not summary:
+            raise EngineError("criterion and summary cannot be empty")
+        with self.store.lock(feature):
+            state = self.store.load_state(feature)
+            task = task_by_id(state, source_task)
+            if criterion not in task.get("acceptance_criteria", []):
+                raise EngineError("criterion must exactly match an acceptance criterion on %s" % source_task)
+            if retry and task.get("state") in {"complete", "escalated"}:
+                raise EngineError("completed or escalated task %s cannot be retried" % source_task)
+            if any(
+                item.get("source_task") == source_task
+                and item.get("criterion") == criterion
+                and item.get("status") == "open"
+                for item in state.get("remediations", [])
+            ):
+                raise EngineError("an open remediation already exists for %s" % source_task)
+            numbers = []
+            for item in state.get("remediations", []):
+                identifier = str(item.get("id", ""))
+                suffix = identifier[4:] if identifier.startswith("REM-") else ""
+                if suffix.isdigit():
+                    numbers.append(int(suffix))
+            identifier = "REM-%d" % (max(numbers or [0]) + 1)
+            record = {
+                "id": identifier,
+                "source_gate": source_gate,
+                "source_task": source_task,
+                "severity": severity,
+                "criterion": criterion,
+                "summary": summary,
+                "status": "open",
+                "fix_task": None,
+                "attempts": 0,
+                "created_at": utc_now(),
+                "resolved_at": None,
+            }
+            state.setdefault("remediations", []).append(record)
+            if retry:
+                self._fail_in_state(state, task, summary)
+                record["attempts"] = task.get("attempts", 0)
+            self._commit(
+                state,
+                "remediation_recorded",
+                actor,
+                task=source_task,
+                detail=summary,
+                data={"remediation_id": identifier, "retry": retry, "severity": severity},
+            )
+            return state
+
+    def resolve_remediation(
+        self, feature: str, remediation_id: str, *, actor: str = "coordinator"
+    ) -> Dict[str, Any]:
+        """Resolve a finding only after its linked fix task is complete."""
+
+        with self.store.lock(feature):
+            state = self.store.load_state(feature)
+            matches = [item for item in state.get("remediations", []) if item.get("id") == remediation_id]
+            if len(matches) != 1:
+                raise EngineError("unknown remediation: %s" % remediation_id)
+            record = matches[0]
+            if record.get("status") != "open":
+                raise EngineError("remediation %s is not open" % remediation_id)
+            fix_task = record.get("fix_task")
+            if not fix_task:
+                raise EngineError("remediation %s has no linked fix task" % remediation_id)
+            task = task_by_id(state, fix_task)
+            if task.get("state") != "complete":
+                raise EngineError("fix task %s must be complete before resolution" % fix_task)
+            if task.get("review_required", True) and not any(
+                isinstance(review, dict) and review.get("verdict") == "approve"
+                for review in task.get("reviews", [])
+            ):
+                raise EngineError("fix task %s requires approved G3 review before resolution" % fix_task)
+            record["status"] = "resolved"
+            record["resolved_at"] = utc_now()
+            self._commit(
+                state,
+                "remediation_resolved",
+                actor,
+                task=fix_task,
+                detail=remediation_id,
+                data={"remediation_id": remediation_id},
             )
             return state
 
@@ -443,6 +591,24 @@ class HarnessEngine:
                     "contract %s cannot be approved before writer tasks complete: %s"
                     % (reference, ", ".join(unfinished))
                 )
+            compatibility_result = None
+            previous_source = contract.get("previous_source")
+            if previous_source:
+                try:
+                    old_path = (self.store.root / previous_source).resolve()
+                    new_path = (self.store.root / contract["source"]).resolve()
+                    old_path.relative_to(self.store.root.resolve())
+                    new_path.relative_to(self.store.root.resolve())
+                    old_doc = json.loads(old_path.read_text(encoding="utf-8"))
+                    new_doc = json.loads(new_path.read_text(encoding="utf-8"))
+                    if adapter_for and contract.get("kind") in {"schema", "api", "event", "data", "workflow"}:
+                        compatibility_result = adapter_for(contract["kind"]).analyze(old_doc, new_doc)
+                    else:
+                        compatibility_result = compare_contracts(old_doc, new_doc)
+                except (OSError, ValueError, json.JSONDecodeError, CompatibilityError) as exc:
+                    raise EngineError("contract compatibility analysis failed: %s" % exc) from exc
+                if compatibility_result["classification"] == "breaking" and contract.get("change_type") != "breaking":
+                    raise EngineError("contract %s has undeclared breaking compatibility changes" % reference)
             digest = source_digest(self.store.root, contract["source"])
             contract["status"] = "approved"
             contract["source_hash"] = digest
@@ -453,6 +619,8 @@ class HarnessEngine:
                 "note": note,
                 "at": utc_now(),
             }
+            if compatibility_result is not None:
+                record["compatibility"] = compatibility_result
             state.setdefault("contract_approvals", []).append(record)
             refresh_readiness(state["tasks"])
             if state.get("status") not in {"complete", "blocked", "plan_pending_approval"}:
@@ -462,7 +630,7 @@ class HarnessEngine:
                 "contract_approved",
                 approved_by,
                 detail=note,
-                data={"contract": reference, "source_hash": digest},
+                data={"contract": reference, "source_hash": digest, "compatibility": compatibility_result},
             )
             return state
 
@@ -680,7 +848,9 @@ class HarnessEngine:
 
         verification_results: List[Dict[str, Any]] = []
         verification_failure = ""
-        if result.get("outcome") == "success" and task.get("verification_commands"):
+        if result.get("outcome") == "success" and (
+            task.get("verification_commands") or task.get("verification_profiles")
+        ):
             verification_before = snapshot_repository(execution_root)
             verification_results = self._run_verification_commands(task, root=execution_root)
             verification_changed = changed_paths(
@@ -1202,6 +1372,25 @@ class HarnessEngine:
             {"provider": provider, "role": role, "task": task, "outcome": outcome, "at": utc_now()}
         )
 
+    def _refresh_feature_barriers(self, state: Dict[str, Any]) -> None:
+        """Apply read-only cross-feature barrier results to local readiness."""
+
+        dependencies = state.get("feature_dependencies", [])
+        results = CrossFeatureDependencyResolver(self.store.root, state["feature"]).resolve(dependencies)
+        state["feature_dependency_results"] = [
+            {"feature": item.feature, "task": item.task, "satisfied": item.satisfied,
+             "source": item.source, "diagnostic": item.diagnostic}
+            for item in results
+        ]
+        if all(item.satisfied for item in results):
+            refresh_readiness(state["tasks"])
+            return
+        reason = next((item.diagnostic for item in results if not item.satisfied), "feature dependency is incomplete")
+        for task in state["tasks"]:
+            if task.get("state") == "ready":
+                task["state"] = "proposed"
+            task["feature_dependency_block"] = reason
+
     def _run_verification_commands(
         self, task: Dict[str, Any], *, root: Optional[Path] = None
     ) -> List[Dict[str, Any]]:
@@ -1257,6 +1446,43 @@ class HarnessEngine:
                 record["policy_error"] = policy_error
             records.append(record)
             if records[-1]["passed"] is False:
+                break
+        if records and not records[-1]["passed"]:
+            return records
+        try:
+            profiles = QaProfileResolver(verification_root).resolve(task.get("verification_profiles", []))
+        except QaProfileError as exc:
+            if task.get("verification_profiles"):
+                records.append({"profile_id": None, "passed": False, "exit_code": None, "timed_out": False, "policy_error": str(exc)})
+            return records
+        for profile in profiles:
+            started = time.monotonic()
+            timed_out = False
+            stdout = ""
+            stderr = ""
+            try:
+                completed = subprocess.run(
+                    list(profile.command), cwd=str(verification_root / profile.cwd),
+                    capture_output=True, text=True, timeout=profile.timeout_seconds,
+                    shell=False, check=False,
+                )
+                exit_code = completed.returncode
+                stdout, stderr = completed.stdout or "", completed.stderr or ""
+            except subprocess.TimeoutExpired as exc:
+                exit_code, timed_out = None, True
+                stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+                stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+            except OSError as exc:
+                exit_code, stderr = 127, str(exc)
+            output = (stdout + "\n" + stderr).encode("utf-8", errors="replace")
+            records.append({
+                "profile_id": profile.identifier, "command": list(profile.command), "cwd": profile.cwd,
+                "timeout_seconds": profile.timeout_seconds, "metadata": profile.evidence_metadata(),
+                "exit_code": exit_code, "duration_ms": int((time.monotonic() - started) * 1000),
+                "output_digest": "sha256:" + hashlib.sha256(output).hexdigest(), "output_bytes": len(output),
+                "timed_out": timed_out, "passed": exit_code == 0 and not timed_out,
+            })
+            if not records[-1]["passed"]:
                 break
         return records
 
@@ -1383,7 +1609,8 @@ class HarnessEngine:
             "the harness will validate and persist it. For multi-service work, declare the service "
             "registry, versioned contracts, one service per implementation task, contract read/write "
             "sets, data ownership, rollout, and rollback. Contract writers are Architect-owned and "
-            "consumers depend on them. Do not perform implementation.\n\n"
+            "consumers depend on them. If no public cross-service contracts are created, leave contracts "
+            "empty and omit contract_reads, contract_writes, and produces on tasks. Do not perform implementation.\n\n"
             "Goal: %s\nConstraints: %s\nVerification: %s\nExisting tasks for replan: %s\n\n"
             "Requirement registry (every ID must be covered by task requirement_refs): %s\n"
             "Relevant context with provenance:\n%s"
@@ -1406,11 +1633,14 @@ class HarnessEngine:
             "task-specific files on demand; do not load unrelated skills or agent contracts. "
             "Implement exactly one bounded task. Do not expand file scope. The harness owns "
             "`.project/`, `features/`, and `.workspace/`; do not edit them. Run checks that prove "
-            "each acceptance criterion and return structured evidence. Never change an undeclared "
-            "service or contract.\n\nGoal: %s\nTask: %s\n\nService/contract graph: %s\n\nContext:\n%s"
+            "each acceptance criterion. After all tool work is complete, return exactly one JSON "
+            "object that validates against the final-result schema below; do not emit progress JSON "
+            "objects. Never change an undeclared service or contract.\n\nFinal-result schema:\n%s"
+            "\n\nGoal: %s\nTask: %s\n\nService/contract graph: %s\n\nContext:\n%s"
             % (
                 workflow,
                 owner_contract,
+                json.dumps(EXECUTION_SCHEMA, ensure_ascii=False, separators=(",", ":")),
                 state["goal"],
                 json.dumps(task, ensure_ascii=False, indent=2),
                 graph,
@@ -1437,10 +1667,13 @@ class HarnessEngine:
             "and evidence, including service ownership and contract compatibility. Do not edit files. "
             "When Bash is available, use it only for non-mutating verification such as tests and "
             "Git diff/status inspection. For an isolated workspace, the exact review patch is staged "
-            "only in that disposable workspace; inspect it with `git diff --cached`.\n\n"
+            "only in that disposable workspace; inspect it with `git diff --cached`. After all checks, "
+            "return exactly one JSON object that validates against the final-review schema below; do not "
+            "emit progress JSON objects.\n\nFinal-review schema:\n%s\n\n"
             "Goal: %s\nTask and evidence: %s\n\nService/contract graph: %s\n\nContext:\n%s"
             % (
                 review_instruction,
+                json.dumps(REVIEW_SCHEMA, ensure_ascii=False, separators=(",", ":")),
                 state["goal"],
                 json.dumps(task, ensure_ascii=False, indent=2),
                 graph,

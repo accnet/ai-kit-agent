@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/block.v2.schema.json",
+  "title": "Grouped block manifest v2",
+  "description": "Breaking schema-v2 Block manifest. Placement, lifecycle capabilities, and commerce compatibility family are theme-owned registry metadata and never instance-controlled values.",
+  "x-starterkit-contract": {
+    "contractId": "starterkit.block-manifest@2.0.0",
+    "version": 2,
+    "status": "draft",
+    "sourceHash": "pending",
+    "compatibility": "none",
+    "changeType": "breaking",
+    "owner": "block-registry-v2",
+    "writerTask": "os2-grid-first-theme-v2/T1",
+    "producers": [
+      "grouped-block-modules-v2"
+    ],
+    "consumers": [
+      "block-schema-v2",
+      "block-registry-v2",
+      "block-definitions-api-v2",
+      "surface-requirements-v2",
+      "template-renderer-v2",
+      "theme-builder-v2"
+    ],
+    "rollout": "The v2 registry scans only grouped two-level module paths after contract approval.",
+    "rollback": "Select runtime v1; the flat v1 registry and manifests remain untouched."
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "type",
+    "label",
+    "category",
+    "contexts",
+    "regions",
+    "settings"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 2
+    },
+    "type": {
+      "$ref": "#/$defs/typeId"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "content",
+        "media",
+        "navigation",
+        "commerce",
+        "conversion",
+        "interactive",
+        "marketing"
+      ]
+    },
+    "contexts": {
+      "$ref": "#/$defs/contexts"
+    },
+    "regions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "header",
+          "main",
+          "footer"
+        ]
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/typeId"
+      },
+      "default": []
+    },
+    "compatibility_family": {
+      "type": "string",
+      "enum": [
+        "atomic",
+        "native-compatible"
+      ]
+    },
+    "settings": {
+      "$ref": "settings.schema.json"
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "css": {
+          "$ref": "#/$defs/assetPathOrPaths"
+        },
+        "js": {
+          "$ref": "#/$defs/assetPathOrPaths"
+        }
+      },
+      "additionalProperties": false
+    },
+    "inserter": {
+      "type": "boolean",
+      "default": true,
+      "description": "Controls Builder insertion only; false does not disable stored instances."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "typeId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 96
+    },
+    "contexts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "index",
+          "page",
+          "product",
+          "collection",
+          "cart",
+          "checkout",
+          "search",
+          "404",
+          "header",
+          "footer"
+        ]
+      }
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_.-]+$",
+      "maxLength": 240
+    },
+    "assetPathOrPaths": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/assetPath"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/assetPath"
+          }
+        }
+      ]
+    }
+  }
+}

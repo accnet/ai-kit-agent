@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/surface.schema.json",
+  "title": "Builder surfaces",
+  "description": "Response of GET /starterkit/v1/surfaces: the builder's editable surfaces. Envelope shape matches the other controllers, which return their payload under a named key.",
+  "type": "object",
+  "required": [
+    "surfaces"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "context",
+          "has_document"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Template identifier."
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable surface label."
+          },
+          "context": {
+            "type": "string",
+            "description": "Section context offered by the surface."
+          },
+          "has_document": {
+            "type": "boolean",
+            "description": "Whether a template document exists for the surface."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

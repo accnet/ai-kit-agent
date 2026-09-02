@@ -39,6 +39,20 @@ For programs larger than 24 tasks, create bounded feature/workstream plans and
 connect them with `program_id`, `workstream_id`, `parent_feature`, and versioned
 contract references. Do not raise the cap to create a context-heavy flat plan.
 
+### Cross-workstream dependencies are not machine-readable
+
+`needs:` is resolved by `.ai/scripts/next-task.sh` **within a single tasks.md only**. A task that
+depends on another workstream cannot express it in `needs:`, and `next-task.sh` will happily offer
+that task as claimable before its real prerequisite exists.
+
+Until the harness models this, state such a dependency **explicitly in the task's acceptance
+criteria** — name the blocking workstream and say the task does not start before it closes — and
+repeat it in the plan's Approach section. Treat it as a review item, because nothing mechanical
+enforces it.
+
+Known limitation, recorded so it is not rediscovered: an agent following `next-task.sh` alone will
+start cross-workstream work too early.
+
 ## Output
 Ordered task list for tasks.md (IDs unique per file; `.ai/scripts/next-task.sh` parses this):
 ```

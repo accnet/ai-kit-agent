@@ -66,6 +66,36 @@ def render_plan(state: Dict[str, Any]) -> str:
         lines.extend(
             ["- %s: %s" % (label, _one_line(value)) for label, value in hierarchy if value]
         )
+    barriers = state.get("feature_dependency_results", [])
+    if barriers:
+        lines.extend(["", "## Feature Dependencies", ""])
+        for barrier in barriers:
+            lines.append(
+                "- %s:%s | %s | source: %s | %s"
+                % (
+                    _one_line(barrier.get("feature", "?")),
+                    _one_line(barrier.get("task", "?")),
+                    "satisfied" if barrier.get("satisfied") else "blocked",
+                    _one_line(barrier.get("source") or "none"),
+                    _one_line(barrier.get("diagnostic") or ""),
+                )
+            )
+    remediations = state.get("remediations", [])
+    if remediations:
+        lines.extend(["", "## Remediations", ""])
+        for remediation in remediations:
+            lines.append(
+                "- %s | %s | %s | source: %s/%s | fix: %s"
+                % (
+                    _one_line(remediation.get("id", "?")),
+                    _one_line(remediation.get("status", "unknown")),
+                    _one_line(remediation.get("severity", "unknown")),
+                    _one_line(remediation.get("source_gate", "unknown")),
+                    _one_line(remediation.get("source_task", "?")),
+                    _one_line(remediation.get("fix_task") or "unassigned"),
+                )
+            )
+            lines.append("  - " + _one_line(remediation.get("summary", "")))
     services = state.get("services", [])
     if services:
         lines.extend(["", "## Services", ""])
@@ -182,6 +212,10 @@ def render_tasks(state: Dict[str, Any]) -> str:
             lines.append("  - Requirements: " + _items(task.get("requirement_refs", [])))
         for command in task.get("verification_commands", []):
             lines.append("  - Verify: " + _one_line(json.dumps(command, ensure_ascii=False)))
+        if task.get("verification_profiles"):
+            lines.append("  - Verification profiles: " + _items(task["verification_profiles"]))
+        if task.get("feature_dependency_block"):
+            lines.append("  - Blocked: " + _one_line(task["feature_dependency_block"]))
         risks = task.get("risks", [])
         if risks:
             lines.append("  - Risks: " + _items(risks))

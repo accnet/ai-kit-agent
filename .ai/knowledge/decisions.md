@@ -14,6 +14,20 @@ Format:
 
 Rules: entries are append-only; a reversed decision gets a NEW entry linking the old one, the old entry is never edited. Only decisions that bind FUTURE work belong here — one-off choices stay in `.project/<feature>/decisions.md`.
 
+## 2026-08-30 IDE-Native Parallel Orchestration Is Coordinator-Owned
+- Decision: parallel implementation uses a versioned AI-Kit orchestration contract; Codex IDE owns native-worker scheduling and worktree creation, while AI-Kit validates DAG readiness, disjoint file scopes, worker manifests, and coordinator-owned transitions.
+- Because: `.ai` cannot create native Codex workers or call a provider API; task-state writes must remain serialized and auditable.
+- Instead of: workers self-editing `tasks.md`, sharing a worktree, or treating declarative JSON as an implicit scheduler.
+- Scope: `.ai/config.json`, `.ai/scripts/`, coordinator protocol, and all future parallel workstreams.
+- Source: user request and `.project/ai-kit-parallel-orchestration/`
+
+## 2026-08-30 Grok CLI Is the Generic Implementation Provider
+- Decision: `execution.task_cli` selects `grok` with no pinned model for generic harness implementation tasks; Codex remains the explicit planner/default primary identity and QA/review routes remain unchanged.
+- Because: implementation task execution needs an opt-in Grok route without coupling it to planning or quality-provider policy.
+- Supersedes: the Codex-only execution selection in “Codex CLI Task Execution Is Explicitly Configured”; legacy `execution.codex_cli` remains readable as a compatibility fallback.
+- Scope: `.ai/harness/`, `.ai/config.json`, implementation skill, and operator workflow.
+- Source: user request and `.project/grok-cli-implementer/`
+
 ## 2026-08-22 QA and Review CLI Routing Is Independently Configured
 - Decision: `.ai/config.json` contains separate disabled-by-default QA and Review routes selecting `codex-cli`/`gpt-5.6-sol` or `claude-cli`/`claude-sonnet-5`
 - Because: quality work may need a stronger or cross-model agent without coupling provider choice to normal implementation or silently invoking a billed service

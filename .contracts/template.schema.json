@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/template.schema.json",
+  "title": "Template document",
+  "description": "Schema for a Shopify OS 2.0-style template document containing ordered section instances. The order array must be a permutation of the sections keys; this runtime invariant is enforced by inc/Templates/TemplateSchema.php, not by this schema.",
+  "type": "object",
+  "required": [
+    "schema",
+    "sections",
+    "order"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 1
+    },
+    "template": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "render_post_content": {
+      "type": "boolean",
+      "default": false
+    },
+    "sections": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z0-9_-]+$": {
+          "$ref": "#/$defs/sectionInstance"
+        }
+      },
+      "additionalProperties": false
+    },
+    "order": {
+      "type": "array",
+      "description": "Ordered section instance identifiers. It must be a permutation of the sections keys; that runtime invariant is enforced by inc/Templates/TemplateSchema.php, not by this schema.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_-]+$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sectionInstance": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        },
+        "settings": {
+          "type": "object"
+        },
+        "blocks": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_-]+$": {
+              "$ref": "#/$defs/blockInstance"
+            }
+          },
+          "additionalProperties": false
+        },
+        "block_order": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+$"
+          }
+        },
+        "rules": {
+          "$ref": "display-rule.schema.json"
+        }
+      },
+      "additionalProperties": false
+    },
+    "blockInstance": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        },
+        "settings": {
+          "type": "object"
+        },
+        "column": {
+          "type": "string",
+          "description": "Layout group this block belongs to inside its parent section. It must be one of the parent section definition's block_groups.values; that runtime invariant is enforced by inc/Templates/TemplateSchema.php, not by this schema. A block in a section that declares no block_groups ignores this key.",
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

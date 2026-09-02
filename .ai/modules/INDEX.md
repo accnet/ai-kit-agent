@@ -18,6 +18,7 @@ Route from this table — read a module's body only when this index says it appl
 | Before any commit | git.md |
 | Agents running in parallel | git.md (Worktrees & Parallel Agents) |
 | Multiple services, public APIs/events, shared workflows, or data ownership | contracts.md |
+| IDE-native parallel task orchestration | orchestration.md → contracts.md → testing.md |
 | Review / self-review before handoff | review.md |
 
 ## Per Intent / Owner

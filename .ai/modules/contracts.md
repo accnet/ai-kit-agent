@@ -24,9 +24,74 @@ alone never proves two service tasks are independent.
 | Workflow | state machine, source of truth, saga/compensation, consistency window |
 | Operations | SLO, health, telemetry, capacity, deploy order, canary, rollback |
 
-Product contract sources belong in committed code such as `contracts/` or an
-owning service. `state.json` stores the execution view and current approved
-hash; generated `.project/` Markdown is never a product interface source.
+AI-Kit protocol contracts belong under `.ai/contracts/`. Project product
+contract sources belong in `.contracts/` or below the owning service's declared
+paths. `state.json` stores the execution view and current
+approved hash; generated `.project/` Markdown is never a product interface
+source.
+
+## Supported project contract types
+
+Project contracts in `.contracts/` may use these governed kinds:
+
+| Kind | Canonical representation | Required semantic concerns |
+|---|---|---|
+| `schema` | JSON Schema | properties, required fields, types, enums, arrays, refs, evolution |
+| `api` | OpenAPI with JSON Schema payloads | operations, request/response, errors, auth, idempotency, deprecation |
+| `event` | AsyncAPI-like document with optional CloudEvents envelope | channel, message, key, ordering, delivery, replay, duplicates, DLQ |
+| `data` | project-owned declarative metadata/schema | single writer, entities, integrity, expand/backfill/switch/contract, reconciliation |
+| `workflow` | project-owned state-machine metadata | source of truth, transitions, timeout, retry, idempotency, compensation |
+
+JSON Schema is the reusable payload primitive for API and event contracts. A
+CloudEvents envelope is an event concern and does not replace AsyncAPI channel
+or message ownership. Frontend view-model, operations/SLO, GraphQL, gRPC,
+Avro, and Pact contracts are future extensions unless a feature explicitly
+adds an approved adapter.
+
+## Project bootstrap and ownership
+
+Installing `.ai` provisions AI-Kit runtime contracts from `.ai/contracts/` but
+must not invent project contracts. A project may create an empty `.contracts/`
+registry or skeleton only; services, owners, producers, consumers, versions,
+invariants, and rollback decisions require an Architect/user-owned contract
+task. `.contracts/` sources are never treated as AI-Kit runtime contracts.
+
+Every project contract declares exactly one owner service, at least one
+producer, zero or more consumers, a semantic version, compatibility mode,
+change type, source path, verification, rollout, and rollback. The source path
+must remain under `.contracts/` or the owning service's declared contract
+directory; `.project/` projections and `.ai/contracts/` are invalid project
+sources.
+
+## Adapter and compatibility rules
+
+Shape validation, semantic compatibility, and governance are separate layers:
+
+1. A kind adapter parses the declared source into a normalized contract model.
+2. The compatibility checker returns `unchanged`, `additive`, `backward`,
+   `forward`, `full`, `breaking`, or `unsupported` with path-scoped findings.
+3. Policy enforces ownership, approval, dependencies, migration evidence, and
+   release metadata.
+
+Adapters are read-only, deterministic, dependency-bounded, and must not use
+network or mutate contract sources. Unsupported keywords or protocol features
+fail closed. A breaking result requires `change_type: breaking`,
+`compatibility: none`, explicit consumer migration tasks, integration evidence,
+and a rollback plan; it is never silently downgraded to additive.
+
+The AI-Kit core may validate project contract metadata and invoke approved
+adapters, but it never auto-approves, auto-deploys, runs database migrations,
+or infers missing service ownership from source files.
+
+## Capability activation
+
+The IDE LLM may recommend contract capabilities when repository or task
+evidence warrants them; users do not choose a project-size profile. The
+deterministic resolver records signals and provenance and enforces dependencies.
+Declared services or contracts always activate their ownership, compatibility,
+and integration controls even if the LLM omitted them. Database and production
+risks similarly activate database safety and release ordering. Overrides cannot
+disable controls required by declarations or the global safety floor.
 
 ## Planning rules
 
@@ -57,9 +122,10 @@ hash; generated `.project/` Markdown is never a product interface source.
 - **C6 Release**: environment, service delivery predecessors, rollout, and
   rollback are visible before a release task can close.
 
-The v0.7 harness mechanically enforces C1, C2, the declared portion of C3, and
-task-level ownership for C4. G2/G3 evidence and reviewers enforce C5/C6 until a
-deployment adapter exists. Do not claim remote deploy enforcement.
+The v0.16 harness mechanically enforces C1, C2, the declared portion of C3,
+task-level ownership for C4, and required task declarations plus passing local
+evidence for C5/C6. G3 still evaluates evidence quality, and host controls remain
+authoritative for deployment because no remote deployment adapter exists.
 
 ## Scheduling and invalidation
 
@@ -76,6 +142,29 @@ deployment adapter exists. Do not claim remote deploy enforcement.
   symlinked, or hash-mismatched contracts fail closed with replan guidance.
 - Replan preserves an approval only when public metadata and the source digest
   are unchanged.
+
+## Cross-feature execution contract
+
+Harness canonical plans may add optional plan-level `feature_dependencies` and
+task-level ordered `verification_profiles`. These fields are additive: plans
+without them retain legacy local scheduling and inline verification behavior.
+
+- `feature_dependencies` entries name one external `feature` and `task`; every
+  local task is blocked until every target is complete.
+- Target `state.json` is authoritative when present. A missing or malformed
+  state is an error and must not fall back to `tasks.md`; only an absent state
+  permits legacy checkbox resolution.
+- Duplicate, self, missing, incomplete, malformed, and cyclic target graphs
+  fail closed with stable diagnostics. Resolution is read-only.
+- `verification_profiles` reference centrally validated profile IDs. Inline
+  `verification_commands` execute first, then profiles in declaration order;
+  the first failure or timeout stops execution and blocks completion.
+- Profile execution uses validated argv, repository-contained cwd, bounded
+  timeout, and `shell=False`. Durable evidence snapshots the resolved profile
+  ID, argv, cwd, timeout, metadata, exit result, duration, and output digest.
+
+Provider enablement remains governed solely by `.ai/config.json`; these fields
+do not select or authorize a provider.
 
 ## Context boundary
 

@@ -14,9 +14,11 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
 from models import APPROVAL_REQUIRED_RISKS, RISK_LABELS, contract_by_ref, contract_ref, task_by_id
 from schemas import PLAN_SCHEMA, SchemaError, validate
+from dependencies import CrossFeatureDependencyResolver
+from capability_config import resolve_plan as resolve_plan_capabilities
 
 
-MAX_TASKS = 24
+MAX_TASKS = 50
 MAX_ATTEMPTS = 3
 DISALLOWED_WRITE_ROOTS = {"features", ".project", ".workspace", ".git"}
 
@@ -83,7 +85,18 @@ def snapshot_repository(root: Path) -> Dict[str, str]:
         for directory, dirnames, filenames in os.walk(str(root), followlinks=False):
             base = Path(directory)
             dirnames[:] = sorted(
-                name for name in dirnames if name != ".git" and name != "__pycache__"
+                name
+                for name in dirnames
+                if name
+                not in {
+                    ".git",
+                    "__pycache__",
+                    "node_modules",
+                    "test-results",
+                    "playwright-report",
+                    ".workspace",
+                    ".pytest_cache",
+                }
             )
             for name in list(dirnames):
                 candidate = base / name
@@ -353,6 +366,17 @@ def normalize_contract_graph(plan: Dict[str, Any], *, validated: bool = False) -
         if raw["change_type"] == "breaking" and raw["compatibility"] != "none":
             raise PolicyError("breaking contract %s must declare compatibility none" % reference)
         source = normalize_path(raw["source"])
+        source_root = PurePosixPath(source).parts[0].lower()
+        if source_root in {".ai", ".project", ".workspace", ".git", "features"}:
+            raise PolicyError("project contract source cannot use control root %s" % source_root)
+        owner_paths = services_by_id[raw["owner"]]["paths"]
+        if not _scope_is_within(".contracts", source) and not any(
+            _scope_is_within(owner_path, source) for owner_path in owner_paths
+        ):
+            raise PolicyError(
+                "project contract %s source must be under .contracts or owner service paths"
+                % reference
+            )
         contract = dict(raw)
         contract.update(
             {
@@ -407,6 +431,10 @@ def normalize_plan(
         validate(plan, PLAN_SCHEMA)
     except SchemaError as exc:
         raise PolicyError("invalid plan schema: %s" % exc) from exc
+    try:
+        resolve_plan_capabilities(plan)
+    except ValueError as exc:
+        raise PolicyError("invalid plan capabilities: %s" % exc) from exc
     graph = normalize_contract_graph(plan, validated=True)
     proposed = plan["tasks"]
     if len(proposed) > MAX_TASKS:
@@ -455,6 +483,15 @@ def normalize_plan(
         verification_commands = []
         for command in raw.get("verification_commands", []):
             verification_commands.append(normalize_verification_command(command, task_id))
+        verification_profiles = _unique(raw.get("verification_profiles", []), "%s verification_profiles" % task_id)
+        remediation_id = raw.get("remediation_id")
+        remediation_of = raw.get("remediation_of")
+        if (remediation_id is None) != (remediation_of is None):
+            raise PolicyError("%s remediation_id and remediation_of must be provided together" % task_id)
+        if remediation_id is not None and not re.fullmatch(r"REM-[1-9][0-9]*", str(remediation_id)):
+            raise PolicyError("%s has an invalid remediation_id" % task_id)
+        if remediation_of is not None and not re.fullmatch(r"T[1-9][0-9]*", str(remediation_of)):
+            raise PolicyError("%s has an invalid remediation_of" % task_id)
         contract_reads = _unique(raw.get("contract_reads", []), "%s contract_reads" % task_id)
         contract_writes = _unique(raw.get("contract_writes", []), "%s contract_writes" % task_id)
         produces = _unique(raw.get("produces", []), "%s produces" % task_id)
@@ -523,6 +560,28 @@ def normalize_plan(
         for reference in produces:
             if service_id and service_id not in contracts[reference]["producers"]:
                 raise PolicyError("%s service is not a producer of %s" % (task_id, reference))
+        raw_contract_evidence = raw.get("contract_evidence", {})
+        contract_evidence = {
+            category: _unique(
+                raw_contract_evidence.get(category, []),
+                "%s contract_evidence.%s" % (task_id, category),
+            )
+            for category in ("integration", "rollout", "rollback", "reconciliation")
+        }
+        referenced_kinds = {contracts[reference]["kind"] for reference in referenced}
+        required_evidence = []
+        if referenced and raw["owner"] == "qa":
+            required_evidence.append("integration")
+        if referenced and raw["owner"] == "release":
+            required_evidence.extend(("rollout", "rollback"))
+        if "data" in referenced_kinds and raw["owner"] in {"qa", "release"}:
+            required_evidence.append("reconciliation")
+        missing_evidence = [category for category in required_evidence if not contract_evidence[category]]
+        if missing_evidence:
+            raise PolicyError(
+                "%s requires contract evidence: %s"
+                % (task_id, ", ".join(missing_evidence))
+            )
         task = {
             "id": task_id,
             "title": raw["title"].strip(),
@@ -536,6 +595,9 @@ def normalize_plan(
             "review_required": review_required,
             "requirement_refs": requirement_refs,
             "verification_commands": verification_commands,
+            "verification_profiles": verification_profiles,
+            "remediation_id": remediation_id,
+            "remediation_of": remediation_of,
             "service": service_id,
             "layer": raw.get("layer") or _default_layer(raw["owner"]),
             "contract_reads": contract_reads,
@@ -546,6 +608,7 @@ def normalize_plan(
             "integration_tests": _unique(
                 raw.get("integration_tests", []), "%s integration_tests" % task_id
             ),
+            "contract_evidence": contract_evidence,
             "deploy_after": deploy_after,
             "rollback": raw.get("rollback", "").strip(),
             "approval_required": bool(set(risks) & APPROVAL_REQUIRED_RISKS),
@@ -566,12 +629,16 @@ def normalize_plan(
                 "risks",
                 "requirement_refs",
                 "verification_commands",
+                "verification_profiles",
+                "remediation_id",
+                "remediation_of",
                 "service",
                 "layer",
                 "contract_reads",
                 "contract_writes",
                 "produces",
                 "data_entities",
+                "contract_evidence",
                 "deploy_after",
                 "rollback",
             )
@@ -596,6 +663,42 @@ def normalize_plan(
         )
     refresh_readiness(normalized)
     return normalized
+
+
+def validate_remediation_links(
+    state: Dict[str, Any], tasks: Sequence[Dict[str, Any]]
+) -> None:
+    """Validate coordinator-created finding to fix-task relationships."""
+
+    records = state.get("remediations", [])
+    if not isinstance(records, list):
+        raise PolicyError("state remediations must be an array")
+    by_id = {record.get("id"): record for record in records if isinstance(record, dict)}
+    by_task = {task.get("id"): task for task in tasks}
+    for task in tasks:
+        remediation_id = task.get("remediation_id")
+        remediation_of = task.get("remediation_of")
+        if (remediation_id is None) != (remediation_of is None):
+            raise PolicyError("%s remediation link is incomplete" % task.get("id"))
+        if remediation_id is None:
+            continue
+        record = by_id.get(remediation_id)
+        if record is None:
+            raise PolicyError("%s references missing remediation %s" % (task["id"], remediation_id))
+        if record.get("status") != "open":
+            raise PolicyError("%s references non-open remediation %s" % (task["id"], remediation_id))
+        if record.get("source_task") != remediation_of or remediation_of not in by_task:
+            raise PolicyError("%s remediation source task does not match %s" % (task["id"], remediation_id))
+        if record.get("fix_task") not in {None, task["id"]}:
+            raise PolicyError("remediation %s already links another fix task" % remediation_id)
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        fix_task = record.get("fix_task")
+        if fix_task is not None:
+            linked = by_task.get(fix_task)
+            if linked is None or linked.get("remediation_id") != record.get("id"):
+                raise PolicyError("remediation %s fix_task link is inconsistent" % record.get("id"))
 
 
 def canonical_digest(value: Any) -> str:
@@ -623,6 +726,9 @@ def plan_revision_digest(state: Dict[str, Any]) -> str:
         "risks",
         "requirement_refs",
         "verification_commands",
+        "verification_profiles",
+        "remediation_id",
+        "remediation_of",
         "service",
         "layer",
         "contract_reads",
@@ -630,42 +736,54 @@ def plan_revision_digest(state: Dict[str, Any]) -> str:
         "produces",
         "data_entities",
         "environments",
-        "integration_tests",
+                "integration_tests",
+                "contract_evidence",
         "deploy_after",
         "rollback",
     )
     for task in state.get("tasks", []):
-        tasks.append({key: task.get(key) for key in protected_task_keys})
-    return canonical_digest(
-        {
-            "feature": state.get("feature"),
-            "goal": state.get("goal"),
-            "requirements": state.get("requirements", []),
-            "revision": state.get("plan_revision", 0),
-            "services": state.get("services", []),
-            "contracts": state.get("contracts", []),
-            "tasks": tasks,
-        }
-    )
+        item = {key: task.get(key) for key in protected_task_keys if key != "verification_profiles"}
+        if task.get("verification_profiles"):
+            item["verification_profiles"] = task["verification_profiles"]
+        if task.get("remediation_id"):
+            item["remediation_id"] = task["remediation_id"]
+            item["remediation_of"] = task.get("remediation_of")
+        tasks.append(item)
+    payload = {
+        "feature": state.get("feature"),
+        "goal": state.get("goal"),
+        "requirements": state.get("requirements", []),
+        "revision": state.get("plan_revision", 0),
+        "services": state.get("services", []),
+        "contracts": state.get("contracts", []),
+        "tasks": tasks,
+    }
+    if state.get("feature_dependencies"):
+        payload["feature_dependencies"] = state["feature_dependencies"]
+    return canonical_digest(payload)
 
 
 def task_action_digest(state: Dict[str, Any], task: Dict[str, Any]) -> str:
     """Bind risky-task approval to the accepted revision and executable action."""
 
-    return canonical_digest(
-        {
-            "feature": state.get("feature"),
-            "revision": state.get("plan_revision", 0),
-            "task": task.get("id"),
-            "files": task.get("files", []),
-            "risks": task.get("risks", []),
-            "environments": task.get("environments", []),
-            "verification_commands": task.get("verification_commands", []),
-            "contract_writes": task.get("contract_writes", []),
-            "data_entities": task.get("data_entities", []),
-            "rollback": task.get("rollback", ""),
-        }
-    )
+    payload = {
+        "feature": state.get("feature"),
+        "revision": state.get("plan_revision", 0),
+        "task": task.get("id"),
+        "files": task.get("files", []),
+        "risks": task.get("risks", []),
+        "environments": task.get("environments", []),
+        "verification_commands": task.get("verification_commands", []),
+        "contract_writes": task.get("contract_writes", []),
+        "data_entities": task.get("data_entities", []),
+        "rollback": task.get("rollback", ""),
+    }
+    if task.get("verification_profiles"):
+        payload["verification_profiles"] = task["verification_profiles"]
+    if task.get("remediation_id"):
+        payload["remediation_id"] = task["remediation_id"]
+        payload["remediation_of"] = task.get("remediation_of")
+    return canonical_digest(payload)
 
 
 def _default_layer(owner: str) -> str:
@@ -802,6 +920,14 @@ def next_schedulable(
         raise PlanApprovalRequired(
             "plan revision %s requires explicit approval" % state.get("plan_revision", 0)
         )
+    if state.get("feature_dependencies"):
+        if root is None:
+            return None
+        barriers = CrossFeatureDependencyResolver(root, state["feature"]).resolve(
+            state["feature_dependencies"]
+        )
+        if not all(item.satisfied for item in barriers):
+            return None
     refresh_readiness(state.get("tasks", []))
     blocked: List[Dict[str, Any]] = []
     contract_blocks: List[PolicyError] = []
@@ -869,7 +995,10 @@ def validate_success(task: Dict[str, Any], result: Dict[str, Any]) -> None:
         for item in result.get("evidence", [])
         if item.get("result") == "pass"
     }
-    missing = [criterion for criterion in task.get("acceptance_criteria", []) if criterion not in passes]
+    required = list(task.get("acceptance_criteria", []))
+    for criteria in task.get("contract_evidence", {}).values():
+        required.extend(criteria)
+    missing = [criterion for criterion in required if criterion not in passes]
     if missing:
         raise PolicyError("execution lacks passing evidence for: %s" % "; ".join(missing))
 

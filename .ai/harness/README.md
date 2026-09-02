@@ -1,6 +1,14 @@
 # AI-Kit Agent Harness
 
-The v0.14 harness lets Codex or Claude reason about plans and implementation
+## IDE-native orchestration boundary
+
+The optional `orchestration` policy in `.ai/config.json` describes Codex IDE native-worker execution.
+The harness validates the policy and exposes read-only DAG/manifest checks, but it never creates native
+workers or calls an LLM API for orchestration. Task claims and completion transitions remain coordinator
+owned; each worker must use a distinct clean worktree supplied by Codex IDE. QA and G3 are blocked until
+the declared implementation dependency barrier closes.
+
+The v0.16 harness lets Codex or Claude reason about plans and implementation
 while deterministic code owns state, policy, approvals, evidence, retries,
 scope verification, multi-service contracts, and recovery. It uses Python 3.9
 standard library only.
@@ -12,6 +20,91 @@ actions, executes accepted verification, and persists transitions. Model text
 never overrides canonical state or a failed gate.
 
 ## Lifecycle
+
+## Test discovery and evidence
+
+Reusable AI-Kit mechanics suites are selected by `.ai/tests/manifest.json`,
+not by a filesystem glob. Project-owned tests belong under `/tests` and use
+their own runner/manifest; they are never packaged with the kit. Every QA
+record should include the exact command, repository-relative working directory,
+timeout, exit code, and the feature/task it verifies. Commands that require a
+subdirectory (for example, browser suites under `tests/e2e`) must declare that
+working directory explicitly.
+
+### Compact full-QA reporting
+
+Use the reporter when the objective is to reduce agent-context text without
+changing what QA executes:
+
+```bash
+.ai/scripts/qa-report.sh --profile ai-kit|theme|browser|all
+```
+
+`all` is the default profile. It runs the existing AI-Kit, theme, and browser
+commands in their fixed repository order, with their existing coverage and
+compute cost. It continues through every profile even after one fails, then
+returns a non-zero status when any profile failed. A named profile runs only
+that existing command. Unknown profile names and duplicate profile arguments
+are usage errors and fail without running QA.
+
+Normal output is a bounded summary of each selected profile's status, duration,
+and local artifact location; a failure also identifies its command. Raw stdout and stderr are retained only
+in owner-only local artifacts; they are never automatically copied into agent
+context. On failure, the summary also identifies the failed profile and a
+bounded diagnostic excerpt. `--verbose` reproduces the stored logs for the
+selected run. The reporter is a presentation and evidence layer: it does not
+select tests from changed paths, weaken a suite, or reduce browser coverage.
+
+Legacy cross-workstream barriers use a task-plan metadata line:
+
+`Feature dependencies: v1-section-column-layout:T96`
+
+The DAG resolves each target task and dispatches only when every referenced task is checked.
+Missing, malformed, duplicate, or incomplete targets are errors. For reusable QA commands,
+`.ai/qa-profiles.json` records an argument-array command, repository-relative `cwd`, bounded
+timeout, and evidence metadata (portable profiles may invoke optional suites such as
+`tests/e2e` through a command argument while keeping `cwd` at `.`); run `python3 .ai/scripts/qa_profiles.py` before accepting a
+profile or use the same check through `doctor.sh`/`validate-kit.sh`.
+
+### QA/review remediation
+
+QA and review findings are coordinator-owned state, not worker edits. A finding
+records its source gate (`qa` or `review`), source task, severity, exact
+acceptance criterion, and reproducible summary. A defect within the current
+task scope retries that task under the normal three-attempt limit. A defect
+requiring new files, ownership, contracts, or acceptance criteria is handled by
+replan with a new task linked to the finding. A finding is resolved only after
+the linked work passes G2 and the required G3 review; provider prose alone
+cannot close it.
+
+### v0.16 canonical barriers and verification profiles
+
+Harness-managed canonical plans may declare optional `feature_dependencies` at
+the plan level. Each entry is an object with exactly `feature` and `task`
+strings. Every local task is blocked until every target is complete. For each
+target, the resolver reads `<feature>/state.json` when it exists; it reads
+`<feature>/tasks.md` only when state is absent. A canonical task satisfies a
+barrier only with status `complete`; a legacy task satisfies it only with `[x]`.
+Missing, malformed, duplicate, self-referencing, unfinished, or cyclic targets
+are deterministic policy errors. Resolution is read-only and never falls back
+from malformed canonical state to Markdown.
+
+Tasks may also declare optional ordered `verification_profiles` alongside
+legacy `verification_commands`. A profile ID expands from `.ai/qa-profiles.json`
+to a validated argument vector, repository-contained working directory,
+bounded timeout, and immutable evidence metadata. Inline commands run first,
+then profiles in declared order. Execution stops at the first non-zero exit,
+timeout, unsafe profile, or repository mutation; no later command runs.
+Profiles never use a shell and cannot override command, cwd, timeout, or
+metadata inline. Existing plans with only `verification_commands` retain their
+fixed 120-second execution behavior.
+
+Every completed verification records an ordered evidence item. Inline evidence
+records its command outcome; profile evidence additionally snapshots profile
+ID, command argv, cwd, timeout, metadata, exit code, duration, and output
+digest. Raw output is not stored in canonical state. Declared barriers and
+verification profiles participate in the normalised plan and task-action
+digests only when present, preserving compatibility for legacy plans.
 
 Create `features/<feature>/brief.md` first; the harness never writes product
 intent. Then initialize canonical execution state:
@@ -128,10 +221,11 @@ Without `--abandon`, cleanup is limited to non-live workspace records. Ownership
 marker, path, repository, and Git checks prevent cleanup of an arbitrary
 directory.
 
-## Codex CLI task execution
+## Generic task CLI execution
 
-Task execution through Codex CLI is disabled by default. The same
-`.ai/config.json` file contains the opt-in policy and exact model:
+Generic implementation-task execution is opt-in. The `execution.task_cli`
+policy selects one configured provider and an optional model; it does not route
+planning, QA, or review:
 
 ```json
 {
@@ -139,9 +233,10 @@ Task execution through Codex CLI is disabled by default. The same
     "isolated_worktree": {
       "required": true
     },
-    "codex_cli": {
-      "enabled": false,
-      "model": "gpt-5.6-terra"
+    "task_cli": {
+      "enabled": true,
+      "provider": "grok",
+      "model": null
     }
   }
 }
@@ -150,7 +245,7 @@ Task execution through Codex CLI is disabled by default. The same
 While disabled, every `step` must select a provider explicitly:
 
 ```bash
-bash .ai/scripts/harness.sh step <feature> --task T1 --provider codex
+bash .ai/scripts/harness.sh step <feature> --task T1 --provider grok
 ```
 
 After manually changing `enabled` to `true`, omit the provider:
@@ -159,12 +254,22 @@ After manually changing `enabled` to `true`, omit the provider:
 bash .ai/scripts/harness.sh step <feature> --task T1
 ```
 
-The harness then selects only Codex CLI, applies `--model gpt-5.6-terra`, and
-rejects Claude or scripted overrides. Planning does not change; QA/Review may
-use their independent quality routes below. Implementation retains the `workspace-write` sandbox, structured
-evidence, actual file-scope hashing, retries, and approvals. A Codex worker
-whose injected prompt already says to implement one bounded harness task works
-directly and must not invoke `harness step` recursively.
+The harness then selects only the configured provider, applies its configured
+model when non-null, and rejects all conflicting or scripted overrides.
+Planning does not change; QA/Review retain their independent quality routes
+below. The current repository config selects Grok for generic implementation
+tasks only. Grok uses a prompt file (never a process argument), non-interactive
+tool approval, and `acceptEdits`; planner/reviewer Grok commands use `plan`
+mode. Its adapter validates the final canonical JSON after the CLI envelope
+rather than passing a JSON schema to Grok, because schema mode can terminate on
+an intermediate reasoning response. A bounded call gets one continuation of the
+same `sessionId` only when Grok reports an incomplete terminal state such as
+`cancelled` or `max_turns`. The continuation is never accepted as success unless
+it returns a schema-valid final result; otherwise the error includes both stop
+reason and session ID for operator recovery. File-scope hashing, retries, and
+approvals remain harness-owned. A worker whose injected prompt already says to
+implement one bounded harness task works directly and must not invoke `harness
+step` recursively.
 
 ## QA and Review CLI routing
 
@@ -250,9 +355,10 @@ For a frontend/backend/API/event/database feature, the provider plan can add:
   `data_entities`, integration checks, delivery order, and rollback.
 
 Contract references use `<id>@<semver>`, for example
-`checkout.api@1.0.0`. Keep durable public sources in repository code such as
-`contracts/api/`, `contracts/events/`, or a service-owned schema directory;
-do not use generated `.project/` files as product contracts.
+`checkout.api@1.0.0`. AI-Kit protocol contracts are shipped under
+`.ai/contracts/`. Keep project product sources in `.contracts/` or below the
+owning service's declared paths; do not use generated
+`.project/` files as product contracts.
 
 Every plan-provided contract enters canonical state as `draft`, even if a
 provider labels it approved. The harness schedules no reader or producer until
@@ -269,6 +375,30 @@ must transitively depend on that writer. Starting the writer immediately
 returns the contract to `draft`/`pending`; passing implementation review does
 not approve it. A successful writer must actually mutate every declared source.
 Run `approve-contract` again before consumer tasks proceed.
+
+Project contract kinds supported by the core are JSON Schema, OpenAPI,
+AsyncAPI with optional CloudEvents envelopes, data metadata, and workflow
+metadata. Their sources belong under `.contracts/`; `.ai/contracts/` is reserved
+for AI-Kit's own runtime protocol contracts. Adapters are deterministic and
+read-only. Unsupported protocol features fail closed and require an explicit
+adapter extension; the harness never invents project contracts during install
+or approval.
+
+## IDE LLM capability selection
+
+The harness exposes capabilities rather than user-facing size profiles. An IDE
+LLM may propose capabilities with repository or task signals. The resolver in
+`capability_config.py` validates the catalog, expands dependencies, preserves
+provenance, and fails closed when a proposal has no evidence. Plan declarations
+also impose non-optional capabilities: services require ownership, contracts
+require the contract graph/compatibility/integration QA, database work requires
+database safety, and production work requires release ordering.
+
+`effective-config` renders the deterministic decision. `init --capability ...
+--signal ...` persists it under `.project/<feature>/capabilities.json`; canonical
+state carries the same decision after planning. No selection may disable the
+planning, file-scope, approval, testing, review, credential, or destructive-op
+safety floor, and selection never invents services or project contracts.
 
 After all consumers have migrated, explicitly deprecate the approved version:
 
@@ -289,8 +419,10 @@ ownership.
 
 The 24-task cap is per feature/workstream. Large programs should use bounded
 service workstreams connected by hierarchy and contract metadata, rather than
-one flat mega-plan. Cross-feature distributed execution and semantic
-OpenAPI/AsyncAPI compatibility diffing are not implemented in v0.14.
+one flat mega-plan. The built-in adapters compare the governed OpenAPI and
+AsyncAPI/CloudEvents subset documented in `.ai/modules/contracts.md`; features
+outside that subset fail closed and need an adapter extension. A distributed
+multi-workstream execution daemon is not implemented in v0.16.
 
 Database, destructive, production, credential, and external-write tasks also
 need task-specific approval:
@@ -383,6 +515,12 @@ before canonical completion is saved. In that case, stop automated approval,
 inspect main status and the recorded patch digest, then reconcile manually; do
 not reapply the patch blindly.
 
+For task resolution, `state.json` is authoritative whenever present. The
+generated `tasks.md` projection must match it before scheduling; a missing or
+stale projection fails closed and is repaired from canonical state. Legacy
+features without `state.json` may be read through their `tasks.md` compatibility
+path, which is labelled as legacy and never upgrades state implicitly.
+
 ## Control boundaries
 
 - Planning and review use read-only/plan provider modes; Codex implementation
@@ -408,7 +546,7 @@ not reapply the patch blindly.
   data safety, integration evidence, and release metadata.
 - Three failed attempts escalate. No automatic production or destructive
   operation is performed by the harness.
-- v0.14 does not yet provide Codex App Server/Claude Agent SDK event adapters,
+- v0.16 does not yet provide Codex App Server/Claude Agent SDK event adapters,
   pre-tool interception inside provider processes, container/network/database
   isolation, authenticated attestations, or a multi-workstream daemon. A Git
   worktree protects the repository promotion path; it is not a full operating-

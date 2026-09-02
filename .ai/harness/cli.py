@@ -17,12 +17,15 @@ from policy import ApprovalRequired, PolicyError, task_is_approved
 from providers import (
     ClaudeProvider,
     CodexProvider,
+    GrokProvider,
     ProviderError,
     ProviderRequest,
     ScriptedProvider,
 )
 from store import LockError, RepositoryStore, StoreError
 from worktrees import GitWorkspaceManager, WorkspaceError
+from project_contracts import validate_contracts
+from capability_config import effective_view, render_human, resolve as resolve_capabilities
 
 
 class ConfiguredProvider:
@@ -77,17 +80,34 @@ def load_config(root: Path) -> Dict[str, Any]:
             "AI-Kit config review.independent_enabled must be true or false"
         )
     execution = kit_config.get("execution")
-    codex_cli = execution.get("codex_cli") if isinstance(execution, dict) else None
-    if not isinstance(codex_cli, dict):
-        raise EngineError("AI-Kit config execution.codex_cli must be an object")
-    if not isinstance(codex_cli.get("enabled"), bool):
+    if not isinstance(execution, dict):
+        raise EngineError("AI-Kit config execution must be an object")
+    task_cli = execution.get("task_cli")
+    if task_cli is None:
+        task_cli = execution.get("codex_cli")
+        if not isinstance(task_cli, dict):
+            raise EngineError("AI-Kit config execution.task_cli must be an object")
+        task_cli = dict(task_cli)
+        task_cli["provider"] = "codex"
+    if not isinstance(task_cli, dict):
+        raise EngineError("AI-Kit config execution.task_cli must be an object")
+    if not isinstance(task_cli.get("enabled"), bool):
         raise EngineError(
-            "AI-Kit config execution.codex_cli.enabled must be true or false"
+            "AI-Kit config execution.task_cli.enabled must be true or false"
         )
-    model = codex_cli.get("model")
-    if not isinstance(model, str) or not model.strip():
+    task_provider = task_cli.get("provider")
+    if not isinstance(task_provider, str):
         raise EngineError(
-            "AI-Kit config execution.codex_cli.model must be a non-empty string"
+            "AI-Kit config execution.task_cli.provider must be a provider name"
+        )
+    model = task_cli.get("model")
+    if model is not None and (not isinstance(model, str) or not model.strip()):
+        raise EngineError(
+            "AI-Kit config execution.task_cli.model must be a non-empty string or null"
+        )
+    if task_cli["enabled"] and task_provider not in config["providers"]:
+        raise EngineError(
+            "AI-Kit config execution.task_cli.provider must name a configured provider"
         )
     isolated_worktree = execution.get("isolated_worktree")
     if not isinstance(isolated_worktree, dict):
@@ -148,6 +168,52 @@ def load_config(root: Path) -> Dict[str, Any]:
                 "harness provider %s has invalid per-role reasoning effort"
                 % provider_name
             )
+    orchestration = kit_config.get("orchestration")
+    if not isinstance(orchestration, dict):
+        raise EngineError("AI-Kit config orchestration must be an object")
+    required_orchestration = {
+        "mode",
+        "enabled",
+        "max_workers",
+        "require_dag",
+        "require_disjoint_files",
+        "coordinator_owns_task_state",
+        "require_worktree_per_worker",
+    }
+    unexpected_orchestration = set(orchestration) - required_orchestration
+    missing_orchestration = required_orchestration - set(orchestration)
+    if unexpected_orchestration or missing_orchestration:
+        raise EngineError(
+            "AI-Kit config orchestration must contain exactly the v1 policy keys"
+        )
+    if orchestration.get("mode") != "ide-native-workers":
+        raise EngineError(
+            "AI-Kit config orchestration.mode must be ide-native-workers"
+        )
+    if not isinstance(orchestration.get("enabled"), bool):
+        raise EngineError(
+            "AI-Kit config orchestration.enabled must be true or false"
+        )
+    max_workers = orchestration.get("max_workers")
+    if (
+        isinstance(max_workers, bool)
+        or not isinstance(max_workers, int)
+        or not 1 <= max_workers <= 4
+    ):
+        raise EngineError(
+            "AI-Kit config orchestration.max_workers must be an integer from 1 to 4"
+        )
+    for policy_key in (
+        "require_dag",
+        "require_disjoint_files",
+        "coordinator_owns_task_state",
+        "require_worktree_per_worker",
+    ):
+        if orchestration.get(policy_key) is not True:
+            raise EngineError(
+                "AI-Kit config orchestration.%s must be true" % policy_key
+            )
+    execution["task_cli"] = task_cli
     config["kit_policy"] = kit_config
     return config
 
@@ -178,7 +244,15 @@ def provider_from_args(
     if model is not None:
         settings["model"] = model
     executable = str(settings.get("executable") or name)
-    raw = CodexProvider(root, executable) if name == "codex" else ClaudeProvider(root, executable)
+    provider_types = {
+        "codex": CodexProvider,
+        "claude": ClaudeProvider,
+        "grok": GrokProvider,
+    }
+    provider_type = provider_types.get(name)
+    if provider_type is None:
+        raise EngineError("provider implementation is not supported: %s" % name)
+    raw = provider_type(root, executable)
     return ConfiguredProvider(raw, settings, int(config.get("provider_output_limit_chars", 200_000)))
 
 
@@ -199,27 +273,36 @@ def task_provider_from_args(
                 "quality.qa.enabled=true in .ai/config.json"
             )
         return provider_from_args(args, root, config)
-    policy = config["kit_policy"]["execution"]["codex_cli"]
+    execution = config["kit_policy"]["execution"]
+    policy = execution.get("task_cli")
+    if policy is None:
+        legacy = execution.get("codex_cli")
+        if not isinstance(legacy, dict):
+            raise EngineError("AI-Kit config execution.task_cli must be an object")
+        policy = dict(legacy)
+        policy["provider"] = "codex"
     if policy["enabled"]:
-        if args.provider not in {None, "codex"}:
+        provider_name = policy["provider"]
+        if args.provider not in {None, provider_name}:
             raise EngineError(
-                "Codex CLI task execution is enabled; step only accepts --provider codex"
+                "Task CLI execution is enabled; step only accepts --provider %s"
+                % provider_name
             )
         if args.response:
             raise EngineError(
-                "--response is unavailable while Codex CLI task execution is enabled"
+                "--response is unavailable while task CLI execution is enabled"
             )
         return provider_from_args(
             args,
             root,
             config,
-            provider_name="codex",
+            provider_name=provider_name,
             model=policy["model"],
         )
     if args.provider is None:
         raise EngineError(
-            "Codex CLI task execution is disabled; pass --provider explicitly or set "
-            "execution.codex_cli.enabled=true in .ai/config.json"
+            "Task CLI execution is disabled; pass --provider explicitly or set "
+            "execution.task_cli.enabled=true in .ai/config.json"
         )
     return provider_from_args(args, root, config)
 
@@ -296,6 +379,13 @@ def parser() -> argparse.ArgumentParser:
         help="override the configured default; independent must be enabled in .ai/config.json",
     )
     init.add_argument("--actor", default="user")
+    init.add_argument("--capability", action="append", default=[], help="LLM-selected capability (repeatable)")
+    init.add_argument("--signal", action="append", default=[], help="repository signal supporting capability selection")
+
+    effective = sub.add_parser("effective-config", help="show effective IDE capability selection")
+    effective.add_argument("--capability", action="append", default=[])
+    effective.add_argument("--signal", action="append", default=[])
+    effective.add_argument("--human", action="store_true", help="render a concise human-readable summary")
 
     plan = sub.add_parser("plan", help="ask an explicitly selected provider to plan or replan")
     plan.add_argument("feature")
@@ -344,6 +434,25 @@ def parser() -> argparse.ArgumentParser:
     review.add_argument("task")
     add_provider_args(review, required=False)
 
+    remediate = sub.add_parser(
+        "remediate", help="record a coordinator-owned QA/review finding"
+    )
+    remediate.add_argument("feature")
+    remediate.add_argument("source_task")
+    remediate.add_argument("--source-gate", choices=["qa", "review"], required=True)
+    remediate.add_argument("--severity", choices=["minor", "major", "blocker"], required=True)
+    remediate.add_argument("--criterion", required=True)
+    remediate.add_argument("--summary", required=True)
+    remediate.add_argument("--retry", action="store_true")
+    remediate.add_argument("--actor", default="coordinator")
+
+    resolve_remediation = sub.add_parser(
+        "resolve-remediation", help="resolve a finding after its fix task completes"
+    )
+    resolve_remediation.add_argument("feature")
+    resolve_remediation.add_argument("remediation_id")
+    resolve_remediation.add_argument("--actor", default="coordinator")
+
     approve = sub.add_parser("approve", help="record explicit approval for a risky task")
     approve.add_argument("feature")
     approve.add_argument("task")
@@ -362,6 +471,8 @@ def parser() -> argparse.ArgumentParser:
     approve_contract.add_argument("contract", help="contract reference in <id>@<version> form")
     approve_contract.add_argument("--approved-by", required=True)
     approve_contract.add_argument("--note", default="")
+
+    sub.add_parser("validate-project-contracts", help="validate project-owned contracts under .contracts/")
 
     deprecate_contract = sub.add_parser(
         "deprecate-contract", help="explicitly deprecate an approved contract version"
@@ -412,7 +523,7 @@ def parser() -> argparse.ArgumentParser:
 
 def add_provider_args(target: argparse.ArgumentParser, *, required: bool = True) -> None:
     target.add_argument(
-        "--provider", choices=["codex", "claude", "scripted"], required=required
+        "--provider", choices=["codex", "claude", "grok", "scripted"], required=required
     )
     target.add_argument("--response", help="offline JSON response file for --provider scripted")
 
@@ -449,6 +560,7 @@ def status_view(state: Dict[str, Any]) -> Dict[str, Any]:
             "%s@%s" % (contract.get("id"), contract.get("version")): contract.get("status")
             for contract in state.get("contracts", [])
         },
+        "remediations": state.get("remediations", []),
         "workspaces": workspaces,
         "last_transition": state.get("last_transition"),
     }
@@ -472,7 +584,14 @@ def main(argv: Optional[list] = None) -> int:
             workspace_manager=workspace_manager,
         )
 
-        if args.command == "init":
+        if args.command == "effective-config":
+            value = effective_view(resolve_capabilities(args.capability, args.signal), config)
+            if args.human:
+                print(render_human(value))
+                return 0
+        elif args.command == "validate-project-contracts":
+            value = validate_contracts(root)
+        elif args.command == "init":
             requirements = []
             for value in args.requirement:
                 requirement_id, separator, text_value = value.partition("=")
@@ -488,6 +607,8 @@ def main(argv: Optional[list] = None) -> int:
                 size=args.size,
                 review_policy=args.review_policy,
                 actor=args.actor,
+                capabilities=args.capability,
+                capability_signals=args.signal,
             )
         elif args.command == "plan":
             provider = provider_from_args(args, root, config)
@@ -532,6 +653,21 @@ def main(argv: Optional[list] = None) -> int:
         elif args.command == "review":
             provider = review_provider_from_args(args, root, config)
             value = engine.review_with_provider(args.feature, args.task, provider)
+        elif args.command == "remediate":
+            value = engine.record_remediation(
+                args.feature,
+                args.source_task,
+                source_gate=args.source_gate,
+                severity=args.severity,
+                criterion=args.criterion,
+                summary=args.summary,
+                retry=args.retry,
+                actor=args.actor,
+            )
+        elif args.command == "resolve-remediation":
+            value = engine.resolve_remediation(
+                args.feature, args.remediation_id, actor=args.actor
+            )
         elif args.command == "approve":
             value = engine.approve_task(
                 args.feature, args.task, approved_by=args.approved_by, note=args.note

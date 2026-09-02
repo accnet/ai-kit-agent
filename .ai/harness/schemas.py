@@ -93,12 +93,13 @@ CONTRACT_SCHEMA: Dict[str, Any] = {
         "id": {"type": "string", "pattern": CONTRACT_ID_PATTERN},
         "kind": {
             "type": "string",
-            "enum": ["api", "event", "data", "frontend", "workflow", "operations"],
+                "enum": ["schema", "api", "event", "data", "frontend", "workflow", "operations"],
         },
         "version": {"type": "string", "pattern": VERSION_PATTERN},
         "owner": {"type": "string", "pattern": SERVICE_ID_PATTERN},
         "status": {"type": "string", "enum": ["draft", "approved", "deprecated"]},
         "source": {"type": "string", "minLength": 1, "maxLength": 300},
+        "previous_source": {"type": "string", "minLength": 1, "maxLength": 300},
         "source_hash": {"type": "string", "pattern": SOURCE_HASH_PATTERN},
         "producers": {
             "type": "array",
@@ -196,6 +197,13 @@ TASK_SCHEMA: Dict[str, Any] = {
                 "items": {"type": "string", "minLength": 1, "maxLength": 500},
             },
         },
+        "verification_profiles": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {"type": "string", "pattern": r"^[a-z0-9][a-z0-9_-]*$"},
+        },
+        "remediation_id": {"type": "string", "pattern": r"^REM-[1-9][0-9]*$"},
+        "remediation_of": {"type": "string", "pattern": r"^T[1-9][0-9]*$"},
         "service": {"type": "string", "pattern": SERVICE_ID_PATTERN},
         "layer": {
             "type": "string",
@@ -217,6 +225,16 @@ TASK_SCHEMA: Dict[str, Any] = {
         "data_entities": STRING_LIST_SCHEMA,
         "environments": STRING_LIST_SCHEMA,
         "integration_tests": STRING_LIST_SCHEMA,
+        "contract_evidence": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "integration": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+                "rollout": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+                "rollback": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+                "reconciliation": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 500}}
+            }
+        },
         "deploy_after": {
             "type": "array",
             "maxItems": 20,
@@ -232,9 +250,20 @@ PLAN_SCHEMA: Dict[str, Any] = {
     "required": ["summary", "tasks"],
     "properties": {
         "summary": {"type": "string", "minLength": 3, "maxLength": 3000},
+        "capabilities": {
+            "type": "array", "maxItems": 30,
+            "items": {"type": "string", "pattern": r"^[a-z][a-z0-9_]*$"},
+        },
         "program_id": {"type": "string", "minLength": 1, "maxLength": 120},
         "workstream_id": {"type": "string", "minLength": 1, "maxLength": 120},
         "parent_feature": {"type": "string", "minLength": 1, "maxLength": 160},
+        "feature_dependencies": {
+            "type": "array", "maxItems": 30,
+            "items": {"type": "object", "additionalProperties": False,
+                      "required": ["feature", "task"],
+                      "properties": {"feature": {"type": "string", "pattern": r"^[a-z0-9][a-z0-9_-]*$"},
+                                     "task": {"type": "string", "pattern": r"^T[1-9][0-9]*$"}}},
+        },
         "services": {"type": "array", "maxItems": 50, "items": SERVICE_SCHEMA},
         "contracts": {"type": "array", "maxItems": 100, "items": CONTRACT_SCHEMA},
         "tasks": {"type": "array", "minItems": 1, "maxItems": 24, "items": TASK_SCHEMA},

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/preset.v1.schema.json",
+  "title": "Creation-only Container preset v1",
+  "description": "A context-bounded Container recipe. Presets deliberately use arrays and carry no mutable instance IDs or order arrays; the Builder generates fresh IDs and canonical maps/orders when applying a preset.",
+  "x-starterkit-contract": {
+    "contractId": "starterkit.container-preset@1.0.0",
+    "version": 1,
+    "status": "draft",
+    "sourceHash": "pending",
+    "compatibility": "new",
+    "changeType": "additive",
+    "owner": "preset-registry-v2",
+    "writerTask": "os2-grid-first-theme-v2/T1",
+    "producers": [
+      "filesystem-presets-v1"
+    ],
+    "consumers": [
+      "preset-schema-v1",
+      "preset-definitions-api-v2",
+      "theme-builder-v2"
+    ],
+    "rollout": "Preset discovery remains disabled until the v2 Builder and registry consume the approved source.",
+    "rollback": "Disable the v2 runtime; preset files are creation sources and never live document dependencies."
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "type",
+    "label",
+    "category",
+    "contexts",
+    "regions",
+    "container"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 1
+    },
+    "type": {
+      "$ref": "template.v2.schema.json#/$defs/typeId"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "content",
+        "media",
+        "navigation",
+        "commerce",
+        "conversion",
+        "interactive",
+        "marketing"
+      ]
+    },
+    "contexts": {
+      "$ref": "block.v2.schema.json#/$defs/contexts"
+    },
+    "regions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "header",
+          "main",
+          "footer"
+        ]
+      }
+    },
+    "container": {
+      "$ref": "#/$defs/containerRecipe"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "containerRecipe": {
+      "type": "object",
+      "required": [
+        "settings",
+        "columns"
+      ],
+      "properties": {
+        "settings": {
+          "$ref": "template.v2.schema.json#/$defs/containerSettings"
+        },
+        "rules": {
+          "$ref": "display-rule.schema.json"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/columnRecipe"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "columnRecipe": {
+      "type": "object",
+      "required": [
+        "settings",
+        "blocks"
+      ],
+      "properties": {
+        "settings": {
+          "$ref": "template.v2.schema.json#/$defs/columnSettings"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "template.v2.schema.json#/$defs/blockInstance"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

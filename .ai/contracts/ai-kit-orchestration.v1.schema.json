@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/ai-kit-orchestration.v1.schema.json",
+  "title": "AI-Kit native worker orchestration contract v1",
+  "description": "Versioned workflow contract for Codex IDE native workers. AI-Kit validates the protocol; Codex IDE remains the scheduler and worker factory.",
+  "x-starterkit-contract": {
+    "contractId": "starterkit.ai-kit-orchestration@1.0.0",
+    "version": 1,
+    "status": "draft",
+    "sourceHash": "pending",
+    "compatibility": "none",
+    "changeType": "breaking",
+    "owner": "ai-kit-coordinator",
+    "writerTask": "ai-kit-parallel-orchestration/T1",
+    "producers": [
+      "codex-ide-coordinator",
+      "ai-kit-dag-validator",
+      "ai-kit-coordinator"
+    ],
+    "consumers": [
+      "codex-ide-native-workers",
+      "ai-kit-config-loader",
+      "ai-kit-task-coordinator",
+      "ai-kit-qa-review-gates"
+    ],
+    "permissions": "Only the coordinator may claim, complete, retry, reject, or otherwise mutate task state. Workers receive one task and isolated worktree metadata from Codex IDE.",
+    "ordering": "Dependencies and the QA/G3 barrier are evaluated before dispatch; transition records are serialized per feature.",
+    "idempotency": "Repeated DAG reads are side-effect free. A transition with the same coordinator lease, task, and status is a no-op.",
+    "rollout": "Enable after the contract digest is approved and mechanics/QA evidence passes; existing single-worker execution remains available when orchestration is disabled.",
+    "rollback": "Set orchestration.enabled to false and use the existing single-task scheduler path; no task data migration is required."
+  },
+  "type": "object",
+  "properties": {
+    "kind": {},
+    "contractVersion": {},
+    "orchestration": {},
+    "feature": {},
+    "valid": {},
+    "ready": {},
+    "blocked": {},
+    "active": {},
+    "done": {},
+    "conflicts": {},
+    "errors": {},
+    "max_workers": {},
+    "dispatchable": {},
+    "coordinator_lease": {},
+    "actor": {},
+    "task": {},
+    "status": {},
+    "evidence": {},
+    "barrier": {},
+    "files": {},
+    "worktree": {},
+    "worker": {}
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "$ref": "#/$defs/policyEnvelope"
+    },
+    {
+      "$ref": "#/$defs/dagReport"
+    },
+    {
+      "$ref": "#/$defs/workerManifest"
+    },
+    {
+      "$ref": "#/$defs/transition"
+    }
+  ],
+  "$defs": {
+    "contractVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "taskId": {
+      "type": "string",
+      "pattern": "^T[0-9]+$",
+      "maxLength": 16
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "taskIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/taskId"
+      },
+      "uniqueItems": true
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "mode",
+        "enabled",
+        "max_workers",
+        "require_dag",
+        "require_disjoint_files",
+        "coordinator_owns_task_state",
+        "require_worktree_per_worker"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "ide-native-workers"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "max_workers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "require_dag": {
+          "type": "boolean",
+          "const": true
+        },
+        "require_disjoint_files": {
+          "type": "boolean",
+          "const": true
+        },
+        "coordinator_owns_task_state": {
+          "type": "boolean",
+          "const": true
+        },
+        "require_worktree_per_worker": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "policyEnvelope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "contractVersion",
+        "orchestration"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "policy"
+        },
+        "contractVersion": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "orchestration": {
+          "$ref": "#/$defs/policy"
+        }
+      },
+      "additionalProperties": false
+    },
+    "blockedTask": {
+      "type": "object",
+      "required": [
+        "task",
+        "reasons"
+      ],
+      "properties": {
+        "task": {
+          "$ref": "#/$defs/taskId"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "conflict": {
+      "type": "object",
+      "required": [
+        "tasks",
+        "paths",
+        "reason"
+      ],
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/taskId"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "maxLength": 64
+        },
+        "task": {
+          "$ref": "#/$defs/taskId"
+        },
+        "message": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dagReport": {
+      "type": "object",
+      "required": [
+        "kind",
+        "contractVersion",
+        "feature",
+        "valid",
+        "ready",
+        "blocked",
+        "active",
+        "done",
+        "conflicts",
+        "errors",
+        "max_workers",
+        "dispatchable"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "dag-report"
+        },
+        "contractVersion": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "feature": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "valid": {
+          "type": "boolean"
+        },
+        "ready": {
+          "$ref": "#/$defs/taskIds"
+        },
+        "blocked": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/blockedTask"
+          }
+        },
+        "active": {
+          "$ref": "#/$defs/taskIds"
+        },
+        "done": {
+          "$ref": "#/$defs/taskIds"
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/conflict"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/error"
+          }
+        },
+        "max_workers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "dispatchable": {
+          "$ref": "#/$defs/taskIds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "workerManifest": {
+      "type": "object",
+      "required": [
+        "kind",
+        "contractVersion",
+        "coordinator_lease",
+        "task",
+        "files",
+        "worktree",
+        "worker"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "worker-manifest"
+        },
+        "contractVersion": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "coordinator_lease": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "task": {
+          "$ref": "#/$defs/taskId"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "worktree": {
+          "type": "object",
+          "required": [
+            "path",
+            "isolated",
+            "clean"
+          ],
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "isolated": {
+              "type": "boolean",
+              "const": true
+            },
+            "clean": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "worker": {
+          "type": "object",
+          "required": [
+            "id",
+            "scheduler"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "scheduler": {
+              "type": "string",
+              "const": "codex-ide"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "barrier": {
+      "type": "object",
+      "required": [
+        "satisfied",
+        "dependencies"
+      ],
+      "properties": {
+        "satisfied": {
+          "type": "boolean"
+        },
+        "dependencies": {
+          "$ref": "#/$defs/taskIds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "transition": {
+      "type": "object",
+      "required": [
+        "kind",
+        "contractVersion",
+        "coordinator_lease",
+        "actor",
+        "task",
+        "status",
+        "evidence",
+        "barrier"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "transition"
+        },
+        "contractVersion": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "coordinator_lease": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "actor": {
+          "type": "string",
+          "const": "coordinator"
+        },
+        "task": {
+          "$ref": "#/$defs/taskId"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "claimed",
+            "completed",
+            "retry",
+            "rejected"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "minItems": 1
+        },
+        "barrier": {
+          "$ref": "#/$defs/barrier"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

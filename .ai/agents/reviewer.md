@@ -36,6 +36,7 @@ Review completed work for correctness, security, and consistency before it is ac
 - [ ] Error and edge paths checked
 - [ ] Conventions consistent with the codebase
 - [ ] Every finding has severity + location + suggested fix
+- [ ] Major/blocker findings supply the exact acceptance criterion and a coordinator remediation handoff; Reviewer never edits task/state files
 
 ## Escalation
 - Design-level flaw found → Architect

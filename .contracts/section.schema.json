@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/section.schema.json",
+  "title": "Section manifest",
+  "description": "Schema for a Shopify OS 2.0-style section definition manifest.",
+  "type": "object",
+  "required": [
+    "schema",
+    "type",
+    "settings"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 1
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "label": {
+      "type": "string"
+    },
+    "settings": {
+      "$ref": "settings.schema.json"
+    },
+    "contexts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "index",
+          "page",
+          "product",
+          "collection",
+          "cart",
+          "checkout",
+          "search",
+          "404",
+          "header",
+          "footer"
+        ]
+      }
+    },
+    "max_instances": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum template instances of this section; 0 means unlimited."
+    },
+    "blocks_enabled": {
+      "type": "boolean",
+      "description": "Whether this section can accept blocks. When absent, runtime treats this as false. This capability grants no block by itself; the cross-manifest placement predicate, including the meaning of a block's \"*\" wildcard versus an explicit section type, is enforced at runtime by inc/Sections/SectionSchema.php and inc/Blocks/BlockSchema.php, not by this schema."
+    },
+    "block_limits": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "block_groups": {
+      "type": "object",
+      "description": "Named layout groups this section splits its blocks into. The renderer exposes one rendered HTML string per group value. Membership of `default` in `values` is a runtime invariant enforced by inc/Sections/SectionSchema.php, not by this schema.",
+      "required": [ "values", "default" ],
+      "properties": {
+        "values": {
+          "type": "array",
+          "description": "Group identifiers, in the order the section renders them.",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          }
+        },
+        "default": {
+          "type": "string",
+          "description": "Group a block instance falls into when it declares no column.",
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "supports": {
+      "type": "object",
+      "properties": {
+        "settings": {
+          "type": "boolean"
+        },
+        "presets": {
+          "type": "boolean"
+        },
+        "display_rules": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "settings",
+          "blocks"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "settings": {
+            "type": "object"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+                },
+                "settings": {
+                  "type": "object"
+                },
+                "column": {
+                  "type": "string",
+                  "description": "Layout group this preset block belongs to inside its parent section. It must be one of the parent section definition's block_groups.values; that runtime invariant is enforced by inc/Sections/SectionSchema.php, not by this schema.",
+                  "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "locked": {
+      "type": "boolean",
+      "default": false,
+      "description": "A locked section cannot be deleted or reordered, and TemplateSchema rejects a template missing a required locked section."
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "css": {
+          "$ref": "#/$defs/assetPathOrPaths"
+        },
+        "js": {
+          "$ref": "#/$defs/assetPathOrPaths"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "assetPathOrPaths": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  }
+}

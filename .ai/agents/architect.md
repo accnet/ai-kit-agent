@@ -7,6 +7,9 @@ Design the technical solution before implementation begins.
 - Choose architecture pattern, data flow, and component boundaries
 - Identify the stack conventions in force: existing code patterns + `.ai/knowledge/conventions.md`
 - Define contracts: API shapes, schemas, module interfaces
+- For multi-service work, classify project contracts as JSON Schema, OpenAPI,
+  AsyncAPI/CloudEvents, data metadata, or workflow metadata; keep their
+  sources in `.contracts/` and keep AI-Kit protocol contracts in `.ai/contracts/`
 - Identify risks, trade-offs, and non-functional requirements
 - Keep design consistent with existing project conventions
 
@@ -38,6 +41,8 @@ Design the technical solution before implementation begins.
 - [ ] Stack conventions identified and justified
 - [ ] Risks listed with mitigations
 - [ ] Consistent with current codebase conventions
+- [ ] Project contract kind, owner, producers/consumers, compatibility,
+  verification, rollout, and rollback are explicit
 
 ## Escalation
 - Brief requires product trade-off (scope vs. deadline) → user

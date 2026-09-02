@@ -39,3 +39,25 @@ bash .ai/scripts/doctor.sh --full
 ```
 
 Provider execution is configured in `.ai/config.json` and remains opt-in.
+## Project contracts
+
+AI-Kit runtime contracts live in `.ai/contracts/`. Contracts owned by a
+multi-service project live in `.contracts/` and are governed through its
+registry. Supported kinds are JSON Schema, OpenAPI, AsyncAPI/CloudEvents,
+data metadata, and workflow metadata. Bootstrap may create an empty registry
+skeleton, but AI-Kit never invents product contracts.
+
+## IDE-selected capabilities
+
+AI-Kit does not require a project-size profile. The IDE LLM proposes the
+minimum capabilities justified by the current repository and task—for example
+service ownership, contract compatibility, database safety, integration QA, or
+release ordering. A deterministic resolver validates that proposal, adds
+required dependencies, records its signals and provenance, and rejects
+evidence-free or unknown capabilities.
+
+Core planning, file-scope, approval, testing, review, credential, and
+destructive-operation gates are always enabled. Explicit overrides are audited
+and cannot disable this safety floor. Use `effective-config` to inspect the
+decision; legacy and small projects without multi-service signals retain only
+the core behavior.

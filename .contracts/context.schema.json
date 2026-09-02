@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/context.schema.json",
+  "title": "Template context",
+  "description": "Context exposed to section and block rendering.",
+  "type": "object",
+  "properties": {
+    "request": {
+      "type": "object"
+    },
+    "resource": {
+      "type": "string",
+      "enum": [
+        "index",
+        "page",
+        "product",
+        "collection",
+        "cart",
+        "checkout",
+        "search",
+        "404"
+      ]
+    },
+    "resource_id": {
+      "type": "integer"
+    },
+    "product": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "slug",
+            "permalink",
+            "price_html",
+            "description",
+            "sku",
+            "stock_status",
+            "product_cat_ids",
+            "product_tag_ids"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "slug": {
+              "type": "string"
+            },
+            "permalink": {
+              "type": "string"
+            },
+            "price_html": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string",
+              "description": "Raw product description; sections apply the_content themselves."
+            },
+            "sku": {
+              "type": "string"
+            },
+            "stock_status": {
+              "type": "string"
+            },
+            "product_cat_ids": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "product_tag_ids": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Normalized product data. Null is the normal result when the request is not a product page."
+    },
+    "collection": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "term_id",
+            "name",
+            "slug",
+            "taxonomy",
+            "result_count"
+          ],
+          "properties": {
+            "term_id": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "slug": {
+              "type": "string"
+            },
+            "taxonomy": {
+              "type": "string"
+            },
+            "result_count": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Normalized product collection data. Null is the normal result when the request is not a collection page."
+    },
+    "cart": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "item_count",
+            "totals"
+          ],
+          "properties": {
+            "item_count": {
+              "type": "integer"
+            },
+            "totals": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Cart summary data. Null is the normal result when the request is not a cart or checkout page."
+    },
+    "customer": {
+      "type": "object"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

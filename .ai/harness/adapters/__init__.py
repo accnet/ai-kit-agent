@@ -1,0 +1,1 @@
+"""Project contract kind adapters."""

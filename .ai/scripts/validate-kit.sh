@@ -15,6 +15,8 @@ required=(
   .ai/scripts/check-gates.sh .ai/scripts/sync-skills.sh
   .ai/scripts/validate-kit.sh .ai/scripts/doctor.sh .ai/scripts/harness.sh .ai/scripts/git-qa.sh
   .ai/harness/cli.py .ai/harness/config.json .ai/tests/run.sh .ai/tests/test_harness.py .ai/tests/test_install.sh
+  .ai/tests/manifest.json .ai/tests/test_manifest.py .ai/scripts/consistency.py .ai/tests/test_ai_kit_consistency.py
+  .ai/qa-profiles.json .ai/scripts/qa_profiles.py
   .ai/install/install.sh .ai/install/manifest.txt .ai/install/README.md
   .ai/install/templates/AGENTS.md .ai/install/templates/CLAUDE.md
   .ai/install/templates/pre-commit .ai/install/templates/gates.yml
@@ -34,7 +36,7 @@ while IFS= read -r -d '' module; do
   sed -n '2p' "$module" | grep -qE '^name: [a-z0-9-]+$' || error "$module has invalid name"
   sed -n '3p' "$module" | grep -qE '^description: .+' || error "$module has invalid description"
 done < <(find .ai/modules -type f -name '*.md' ! -name INDEX.md -print0)
-[ "$module_count" -eq 23 ] || error "expected 23 routed modules, found $module_count"
+[ "$module_count" -eq 24 ] || error "expected 24 routed modules, found $module_count"
 
 skill_count=0
 expected_skills=(
@@ -68,12 +70,13 @@ cmp -s .github/workflows/gates.yml .ai/install/templates/gates.yml || error "ins
 
 manifest_count=0
 install_destinations=$'\n'
-while IFS='|' read -r source destination mode; do
+while IFS='|' read -r source destination mode kind; do
   case "$source" in ''|\#*) continue ;; esac
   manifest_count=$((manifest_count+1))
   [ -f ".ai/install/templates/$source" ] || error "installer manifest source missing: $source"
   case "$destination" in ''|/*|*..*) error "unsafe installer destination: $destination" ;; esac
   case "$mode" in 0644|0755) ;; *) error "invalid installer mode for $destination: $mode" ;; esac
+  case "${kind:-managed}" in managed|seed) ;; *) error "invalid installer kind for $destination: $kind" ;; esac
   case "$install_destinations" in
     *$'\n'"$destination"$'\n'*) error "duplicate installer destination: $destination" ;;
     *) install_destinations="${install_destinations}${destination}"$'\n' ;;
@@ -110,12 +113,30 @@ PY
 then
   error "harness Python syntax validation failed"
 fi
+if ! python3 - .ai/scripts/dag.py .ai/scripts/consistency.py .ai/scripts/qa_profiles.py .ai/tests/test_manifest.py .ai/tests/test_ai_kit_consistency.py .ai/tests/test_ai_kit_cross_feature.py .ai/tests/test_qa_profiles.py <<'PY'
+import pathlib
+import sys
+
+for source in sys.argv[1:]:
+    path = pathlib.Path(source)
+    compile(path.read_bytes(), str(path), "exec")
+PY
+then
+  error "AI-Kit consistency/manifest Python syntax validation failed"
+fi
+if ! python3 .ai/scripts/qa_profiles.py >/dev/null; then
+  error "AI-Kit QA profile validation failed"
+fi
 if ! python3 -c 'import json; json.load(open(".ai/harness/config.json", encoding="utf-8"))'; then
   error "invalid harness config JSON"
 fi
-if ! python3 -c 'import json; c=json.load(open(".ai/config.json", encoding="utf-8")); r=c.get("review"); e=c.get("execution"); x=e.get("codex_cli") if isinstance(e, dict) else None; q=c.get("quality"); p=q.get("providers") if isinstance(q, dict) else None; qa=q.get("qa") if isinstance(q, dict) else None; rv=q.get("review") if isinstance(q, dict) else None; assert c.get("schema_version") == 1 and isinstance(r, dict) and r.get("required") is True and isinstance(r.get("independent_enabled"), bool) and isinstance(x, dict) and isinstance(x.get("enabled"), bool) and isinstance(x.get("model"), str) and x.get("model").strip() and isinstance(p, dict) and p.get("codex-cli") == {"provider":"codex","model":"gpt-5.6-sol"} and p.get("claude-cli") == {"provider":"claude","model":"claude-sonnet-5"} and isinstance(qa, dict) and isinstance(qa.get("enabled"), bool) and qa.get("provider") in p and isinstance(rv, dict) and isinstance(rv.get("enabled"), bool) and rv.get("provider") in p'; then
+if ! python3 -c 'import json; c=json.load(open(".ai/config.json", encoding="utf-8")); r=c.get("review"); e=c.get("execution"); x=e.get("task_cli") if isinstance(e, dict) else None; q=c.get("quality"); p=q.get("providers") if isinstance(q, dict) else None; qa=q.get("qa") if isinstance(q, dict) else None; rv=q.get("review") if isinstance(q, dict) else None; assert c.get("schema_version") == 1 and isinstance(r, dict) and r.get("required") is True and isinstance(r.get("independent_enabled"), bool) and isinstance(x, dict) and isinstance(x.get("enabled"), bool) and x.get("provider") == "grok" and x.get("model") is None and isinstance(p, dict) and p.get("codex-cli") == {"provider":"codex","model":"gpt-5.6-sol"} and p.get("claude-cli") == {"provider":"claude","model":"claude-sonnet-5"} and isinstance(qa, dict) and isinstance(qa.get("enabled"), bool) and qa.get("provider") in p and isinstance(rv, dict) and isinstance(rv.get("enabled"), bool) and rv.get("provider") in p'; then
   error "invalid AI-Kit config: require valid review, execution, and QA/Review CLI routing policies"
 fi
 
+if ! python3 .ai/scripts/consistency.py >/dev/null; then
+  error "AI-Kit session/worker-policy consistency check failed"
+fi
+
 if [ "$fail" -ne 0 ]; then exit 1; fi
-echo "AI-Kit validation OK: 23 modules, 8 canonical skills, synchronized projections, harness runtime"
+echo "AI-Kit validation OK: 24 modules, 8 canonical skills, synchronized projections, harness runtime"

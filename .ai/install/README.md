@@ -32,8 +32,16 @@ static validation; the installer does not download system dependencies.
 
 ## Safety and repeat runs
 
+The manifest marks each destination `managed` or `seed`.
+
+A **managed** file must match its shipped template byte-for-byte; the installer refuses to write
+anything when one differs. A **seed** file is created once and then belongs to the project, which
+is free to edit it — `.project/INDEX.md` is a seed, because `ai-kit-plan` requires the project to
+maintain it. Marking it managed made `install.sh --check` permanently fail on any project that
+actually used the planning workflow.
+
 Before writing any managed root file, the installer checks all destinations.
-Existing files must match the shipped template byte-for-byte. A different file,
+Existing managed files must match the shipped template byte-for-byte. A different file,
 a symlink, or a non-directory path stops preflight without writing other managed
 destinations. There is intentionally no force-overwrite option. Reconcile a
 customized file with `.ai/install/templates/` manually and rerun.

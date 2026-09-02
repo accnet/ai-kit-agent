@@ -23,6 +23,14 @@ check "static kit validation" .ai/scripts/validate-kit.sh
 check "skill projections are synchronized" .ai/scripts/sync-skills.sh --check
 check "harness Python integration suite" python3 .ai/tests/test_harness.py
 check "portable installer regression suite" bash .ai/tests/test_install.sh
+check "explicit AI-Kit mechanics manifest" python3 .ai/tests/test_manifest.py
+
+# Only reusable AI-Kit mechanics live here. Project tests are executed by the
+# repository-owned tests/run.sh runner and must never be copied with the kit.
+while IFS= read -r suite; do
+  [ -n "$suite" ] || continue
+  check "AI-Kit suite $(basename "$suite" .py)" python3 "$suite"
+done < <(python3 -c 'import json; from pathlib import Path; root=Path(".ai/tests"); data=json.loads((root/"manifest.json").read_text()); print("\n".join(str(root/name) for name in data["suites"]))')
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -44,7 +52,7 @@ pass=$((pass+1))
 
 FIXTURE="$TMP/repo"
 mkdir -p "$FIXTURE/.ai/scripts" "$FIXTURE/.project/demo" "$FIXTURE/features/demo" "$FIXTURE/src" "$FIXTURE/.githooks"
-cp .ai/scripts/next-task.sh .ai/scripts/state.sh .ai/scripts/context-pack.sh .ai/scripts/log-event.sh .ai/scripts/check-gates.sh .ai/scripts/git-qa.sh "$FIXTURE/.ai/scripts/"
+cp .ai/scripts/next-task.sh .ai/scripts/orchestrate.py .ai/scripts/dag.py .ai/scripts/state.sh .ai/scripts/context-pack.sh .ai/scripts/log-event.sh .ai/scripts/check-gates.sh .ai/scripts/git-qa.sh "$FIXTURE/.ai/scripts/"
 cp .githooks/pre-commit "$FIXTURE/.githooks/"
 
 printf '%s\n' '# Demo brief' 'Exercise task mechanics.' > "$FIXTURE/features/demo/brief.md"
@@ -77,12 +85,11 @@ pass=$((pass+1))
 claimable="$(.ai/scripts/next-task.sh demo)"
 check "dependency blocks T2 initially" bash -c 'printf "%s" "$1" | grep -q "T1" && ! printf "%s" "$1" | grep -q "T2"' _ "$claimable"
 
-check "claim T1" .ai/scripts/next-task.sh demo --claim T1 --instance fixture-agent
+check "worker claim is coordinator-only" bash -c '! .ai/scripts/next-task.sh demo --claim T1 --instance fixture-agent >/dev/null 2>&1'
 state="$(.ai/scripts/state.sh demo)"
-check "state renders in-progress JSON" bash -c 'printf "%s" "$1" | grep -q '"'"'"id":"T1","status":"in-progress"'"'"'' _ "$state"
-check "claim log is valid-shaped JSONL" grep -q '"event":"claimed".*"task":"T1"' .project/log.jsonl
+check "state remains unchanged after worker claim rejection" bash -c 'printf "%s" "$1" | grep -q '"'"'"id":"T1","status":"todo"'"'"'' _ "$state"
 
-sed -i 's/^- \[ \] T1 /- [x] T1 /; s/ | status: in-progress | instance: fixture-agent//' .project/demo/tasks.md
+sed -i 's/^- \[ \] T1 /- [x] T1 /' .project/demo/tasks.md
 claimable="$(.ai/scripts/next-task.sh demo)"
 check "T2 unblocks after T1" bash -c 'printf "%s" "$1" | grep -q "T2"' _ "$claimable"
 

@@ -33,11 +33,21 @@ Verify the feature behaves correctly end-to-end from the user's perspective.
   task through the CLI selected in `.ai/config.json`. A QA worker whose prompt
   already identifies one bounded harness task executes directly and never
   dispatches a nested step.
+- For complete regression evidence with compact output, use `.ai/scripts/qa-report.sh
+  --profile all` (the default). It runs AI-Kit, theme, and browser QA in fixed
+  order even after a failure; do not substitute a changed-path subset for full
+  validation. Named `ai-kit`, `theme`, and `browser` profiles are for isolated
+  diagnosis only. Unknown or duplicate profile arguments are failures.
+- Treat the reporter's local artifact as the source of raw stdout/stderr:
+  normal output is bounded, raw logs are owner-only and never automatically
+  placed in agent context, and `--verbose` reproduces the stored logs.
 
 ## Checklist
 - [ ] Every acceptance criterion has at least one test
 - [ ] Edge cases covered: invalid input, empty, limits, permissions
 - [ ] Defects have reproduction steps and severity
+- [ ] Major/blocker defects name the failed acceptance criterion, source task, affected files, and proposed owner for coordinator remediation
+- [ ] QA does not fix application code or alter task/remediation state
 - [ ] New tests added to the suite, not run once and discarded
 - [ ] Regression check on adjacent features
 

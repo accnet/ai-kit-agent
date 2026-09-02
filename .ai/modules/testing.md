@@ -22,6 +22,10 @@ Every implementation task (unit level) and every QA task (integration/E2E level)
 - Deterministic: no real time, network, or randomness without control
 - Error paths and edge cases (empty, limits, permissions) are mandatory, not stretch goals
 - A test that never fails is a liability — verify it fails when the behavior breaks
+- A failed QA criterion records reproduction, expected versus actual, severity,
+  source task, affected files, and proposed owner. Major/blocker defects are
+  coordinator remediation records; QA never fixes implementation code or marks
+  the finding resolved.
 
 ## Checklist (per feature)
 - [ ] Every acceptance criterion mapped to at least one test

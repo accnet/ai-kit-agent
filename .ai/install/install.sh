@@ -80,23 +80,24 @@ safe_file_parent() {
 }
 
 validate_manifest_source() {
-  local source="$1" destination="$2" mode="$3"
+  local source="$1" destination="$2" mode="$3" kind="$4"
   case "$source" in ''|/*|*..*) error "invalid manifest source: $source"; return ;; esac
   case "$destination" in ''|/*|*..*) error "invalid manifest destination: $destination"; return ;; esac
   case "$mode" in 0644|0755) ;; *) error "invalid manifest mode for $destination: $mode"; return ;; esac
+  case "$kind" in managed|seed) ;; *) error "invalid manifest kind for $destination: $kind"; return ;; esac
   if [ ! -f "$TEMPLATES/$source" ] || [ -L "$TEMPLATES/$source" ]; then
     error "missing regular template: $TEMPLATES/$source"
   fi
 }
 
 preflight_managed_file() {
-  local source="$1" destination="$2" mode="$3" target="$ROOT/$destination"
+  local source="$1" destination="$2" mode="$3" kind="$4" target="$ROOT/$destination"
   safe_file_parent "$destination"
   if [ -L "$target" ]; then
     error "managed destination is a symlink: $target"
   elif [ -e "$target" ] && [ ! -f "$target" ]; then
     error "managed destination is not a regular file: $target"
-  elif [ -f "$target" ] && ! cmp -s "$TEMPLATES/$source" "$target"; then
+  elif [ "$kind" = managed ] && [ -f "$target" ] && ! cmp -s "$TEMPLATES/$source" "$target"; then
     error "managed destination differs; reconcile it manually: $target"
   elif [ "$MODE" = check ] && [ ! -f "$target" ]; then
     error "missing managed file: $target"
@@ -115,14 +116,15 @@ for directory in "${required_directories[@]}"; do
 done
 
 destinations=$'\n'
-while IFS='|' read -r source destination mode; do
+while IFS='|' read -r source destination mode kind; do
   case "$source" in ''|\#*) continue ;; esac
-  validate_manifest_source "$source" "$destination" "$mode"
+  kind="${kind:-managed}"
+  validate_manifest_source "$source" "$destination" "$mode" "$kind"
   case "$destinations" in
     *$'\n'"$destination"$'\n'*) error "duplicate manifest destination: $destination" ;;
     *) destinations="${destinations}${destination}"$'\n' ;;
   esac
-  preflight_managed_file "$source" "$destination" "$mode"
+  preflight_managed_file "$source" "$destination" "$mode" "$kind"
 done < "$MANIFEST"
 
 IGNORE_FILE="$ROOT/.gitignore"
@@ -177,7 +179,7 @@ for directory in "${required_directories[@]}"; do
   mkdir -p "$ROOT/$directory"
 done
 
-while IFS='|' read -r source destination mode; do
+while IFS='|' read -r source destination mode kind; do
   case "$source" in ''|\#*) continue ;; esac
   target="$ROOT/$destination"
   mkdir -p "$(dirname "$target")"

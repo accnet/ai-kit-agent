@@ -7,9 +7,9 @@
       "executable": "codex",
       "model": null,
       "reasoning_effort": {
-        "planner": "high",
-        "implementer": "high",
-        "reviewer": "high"
+        "planner": "medium",
+        "implementer": "medium",
+        "reviewer": "medium"
       },
       "timeout_seconds": 1200
     },
@@ -22,11 +22,20 @@
         "reviewer": "high"
       },
       "timeout_seconds": 1200
+    },
+    "grok": {
+      "executable": "grok",
+      "model": null,
+      "reasoning_effort": {
+        "planner": "high",
+        "implementer": "high",
+        "reviewer": "high"
+      },
+      "timeout_seconds": 1200
     }
   },
   "routing": {
     "planner": "codex",
-    "implementer": "codex",
     "reviewer": {
       "active-agent": "codex",
       "independent": "claude"

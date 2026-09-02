@@ -4,13 +4,23 @@
     "required": true,
     "independent_enabled": false
   },
+  "orchestration": {
+    "mode": "ide-native-workers",
+    "enabled": true,
+    "max_workers": 4,
+    "require_dag": true,
+    "require_disjoint_files": true,
+    "coordinator_owns_task_state": true,
+    "require_worktree_per_worker": true
+  },
   "execution": {
     "isolated_worktree": {
       "required": true
     },
-    "codex_cli": {
+    "task_cli": {
       "enabled": false,
-      "model": "gpt-5.6-terra"
+      "provider": "grok",
+      "model": null
     }
   },
   "quality": {

@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starterkit.local/contracts/template.v2.schema.json",
+  "title": "Grid-First template document v2",
+  "description": "Breaking schema-v2 Template -> Container -> Column -> Block document. Each order array must exactly permute its sibling map keys; that cross-field invariant is enforced by TemplateSchema v2 and the contract fixtures.",
+  "x-starterkit-contract": {
+    "contractId": "starterkit.template-document@2.0.0",
+    "version": 2,
+    "status": "draft",
+    "sourceHash": "pending",
+    "compatibility": "none",
+    "changeType": "breaking",
+    "owner": "template-runtime-v2",
+    "writerTask": "os2-grid-first-theme-v2/T1",
+    "producers": [
+      "filesystem-defaults-v2",
+      "template-rest-v2",
+      "theme-builder-v2"
+    ],
+    "consumers": [
+      "template-schema-v2",
+      "template-renderer-v2",
+      "template-persistence-v2",
+      "preview-document-v2"
+    ],
+    "rollout": "Built beside schema v1 and consumed only by the v2 runtime graph after contract approval.",
+    "rollback": "Select runtime v1; v1 contracts and option values remain untouched."
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "template",
+    "containers",
+    "container_order"
+  ],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 2
+    },
+    "template": {
+      "$ref": "#/$defs/typeId"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "render_post_content": {
+      "type": "boolean",
+      "default": false
+    },
+    "containers": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z0-9_-]+$": {
+          "$ref": "#/$defs/containerInstance"
+        }
+      },
+      "additionalProperties": false
+    },
+    "container_order": {
+      "$ref": "#/$defs/instanceOrder"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "instanceId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 96
+    },
+    "typeId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 96
+    },
+    "instanceOrder": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/instanceId"
+      },
+      "uniqueItems": true
+    },
+    "containerSettings": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "string",
+          "enum": [
+            "full",
+            "boxed",
+            "narrow"
+          ]
+        },
+        "gap": {
+          "type": "string",
+          "enum": [
+            "none",
+            "small",
+            "medium",
+            "large"
+          ]
+        },
+        "padding_y": {
+          "type": "string",
+          "enum": [
+            "none",
+            "small",
+            "medium",
+            "large"
+          ]
+        },
+        "background": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+            },
+            {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?$"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "columnSettings": {
+      "type": "object",
+      "required": [
+        "span"
+      ],
+      "properties": {
+        "span": {
+          "type": "object",
+          "required": [
+            "desktop",
+            "tablet",
+            "mobile"
+          ],
+          "properties": {
+            "desktop": {
+              "$ref": "#/$defs/span"
+            },
+            "tablet": {
+              "$ref": "#/$defs/span"
+            },
+            "mobile": {
+              "$ref": "#/$defs/span"
+            }
+          },
+          "additionalProperties": false
+        },
+        "vertical_align": {
+          "type": "string",
+          "enum": [
+            "top",
+            "center",
+            "bottom",
+            "stretch"
+          ],
+          "default": "top"
+        }
+      },
+      "additionalProperties": false
+    },
+    "span": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 12
+    },
+    "containerInstance": {
+      "type": "object",
+      "required": [
+        "settings",
+        "columns",
+        "column_order"
+      ],
+      "properties": {
+        "settings": {
+          "$ref": "#/$defs/containerSettings"
+        },
+        "rules": {
+          "$ref": "display-rule.schema.json"
+        },
+        "columns": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_-]+$": {
+              "$ref": "#/$defs/columnInstance"
+            }
+          },
+          "additionalProperties": false
+        },
+        "column_order": {
+          "$ref": "#/$defs/instanceOrder"
+        }
+      },
+      "additionalProperties": false
+    },
+    "columnInstance": {
+      "type": "object",
+      "required": [
+        "settings",
+        "blocks",
+        "block_order"
+      ],
+      "properties": {
+        "settings": {
+          "$ref": "#/$defs/columnSettings"
+        },
+        "blocks": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_-]+$": {
+              "$ref": "#/$defs/blockInstance"
+            }
+          },
+          "additionalProperties": false
+        },
+        "block_order": {
+          "$ref": "#/$defs/instanceOrder"
+        }
+      },
+      "additionalProperties": false
+    },
+    "blockInstance": {
+      "type": "object",
+      "required": [
+        "type",
+        "settings"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/typeId"
+        },
+        "settings": {
+          "type": "object"
+        },
+        "rules": {
+          "$ref": "display-rule.schema.json"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

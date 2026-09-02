@@ -10,6 +10,13 @@ FEATURE="${1:?usage: context-pack.sh <feature> T<n>}"
 TID="${2:?usage: context-pack.sh <feature> T<n>}"
 TASKS=".project/$FEATURE/tasks.md"
 [ -f "$TASKS" ] || { echo "ERROR: $TASKS not found" >&2; exit 2; }
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f ".project/$FEATURE/state.json" ]; then
+  python3 "$SCRIPT_DIR/task_state.py" "$FEATURE" --require-projection >/dev/null || {
+    echo "ERROR: canonical task state is invalid or its projection is stale" >&2
+    exit 1
+  }
+fi
 
 task_line=$(grep -E "^- \[.\] $TID " "$TASKS" || true)
 [ -n "$task_line" ] || { echo "ERROR: $TID not found in $TASKS" >&2; exit 1; }
