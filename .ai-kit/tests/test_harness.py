@@ -205,6 +205,29 @@ class HarnessCase(unittest.TestCase):
         }
         return self.engine.review_with_provider("demo", task_id, named_provider([review], "claude"))
 
+    def test_success_with_no_changed_files_is_rejected(self):
+        self.initialize()
+        self.engine.apply_plan(
+            "demo",
+            {"summary": "empty mutation", "tasks": [task(1)]},
+        )
+        result = {
+            "outcome": "success",
+            "summary": "did nothing",
+            "evidence": [
+                {"criterion": "criterion 1 passes", "result": "pass", "detail": "ok"}
+            ],
+            "changed_files": [],
+            "memory": [],
+        }
+        with self.assertRaises(PolicyError):
+            self.engine.execute_with_provider(
+                "demo", named_provider([result], "codex"), task_id="T1"
+            )
+        state = self.store.load_state("demo")
+        self.assertEqual(state["tasks"][0]["state"], "ready")
+        self.assertEqual(state["tasks"][0]["attempts"], 1)
+
     def test_full_lifecycle_approval_resume_events_and_projections(self):
         self.initialize()
         plan = {

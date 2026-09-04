@@ -990,6 +990,10 @@ def validate_success(task: Dict[str, Any], result: Dict[str, Any]) -> None:
         raise PolicyError("execution result is not successful")
     if not changed_files_in_scope(task, result.get("changed_files", [])):
         raise PolicyError("execution changed a file outside the task scope")
+    if task.get("files") and not result.get("changed_files"):
+        raise PolicyError(
+            "execution reported success with no changed files for a task with a declared file scope"
+        )
     passes = {
         item.get("criterion")
         for item in result.get("evidence", [])

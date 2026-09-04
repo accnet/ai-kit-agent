@@ -49,7 +49,7 @@ def main():
 
     normalized = normalize_plan(plan(contract_evidence={"integration": ["producer-consumer passes"],
                                                         "reconciliation": ["row hashes match"]}))[0]
-    result = {"outcome": "success", "changed_files": [], "evidence": [
+    result = {"outcome": "success", "changed_files": ["tests/evidence.py"], "evidence": [
         {"criterion": "acceptance passes", "result": "pass"},
         {"criterion": "producer-consumer passes", "result": "pass"},
     ]}

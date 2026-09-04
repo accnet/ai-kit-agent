@@ -213,11 +213,14 @@ class RepositoryStore:
                 fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
                 break
             except FileExistsError as exc:
+                try:
+                    observed = path.stat()
+                except FileNotFoundError:
+                    continue
                 status = self.lock_status(feature)
                 if not status["stale"]:
                     raise LockError("feature is locked by pid=%s" % status.get("pid", "unknown")) from exc
                 try:
-                    observed = path.stat()
                     current = path.stat()
                 except FileNotFoundError:
                     continue
