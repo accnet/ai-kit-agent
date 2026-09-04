@@ -5,19 +5,19 @@ LLMs such as Codex and Claude to plan, execute, validate, and review software wo
 with durable context, explicit task contracts, bounded file scope, Git evidence,
 approval gates, retries, and recovery.
 
-The maintained kit lives in `.ai/`. Project requirements remain in `features/`,
+The maintained kit lives in `.ai-kit/`. Project requirements remain in `features/`,
 regenerable execution state in `.project/`, and local session pointers in the
 gitignored `.workspace/` directory. `AGENTS.md` is the always-loaded core; the
-specialized skills under `.ai/skills/` route planning, architecture, contracts,
+specialized skills under `.ai-kit/skills/` route planning, architecture, contracts,
 implementation, migration, QA, review, and status work on demand.
 
 ## Install into a new project
 
-Copy the complete `.ai/` directory to the empty project root and run:
+Copy the complete `.ai-kit/` directory to the empty project root and run:
 
 ```bash
-bash .ai/install/install.sh
-bash .ai/install/install.sh --check
+bash .ai-kit/install/install.sh
+bash .ai-kit/install/install.sh --check
 ```
 
 The installer creates the required root instructions, local directories, skill
@@ -28,20 +28,20 @@ does not stage, commit, push, deploy, install dependencies, or call a model.
 The installer never force-overwrites a customized managed file. Resolve any
 reported conflict manually, then rerun. After a successful install, inspect
 `git status` and create the baseline commit yourself when the project is ready.
-See [the portable installer guide](.ai/install/README.md) for all behavior and
+See [the portable installer guide](.ai-kit/install/README.md) for all behavior and
 supported environments.
 
 ## Validate this distribution
 
 ```bash
-bash .ai/tests/run.sh
-bash .ai/scripts/doctor.sh --full
+bash .ai-kit/tests/run.sh
+bash .ai-kit/scripts/doctor.sh --full
 ```
 
-Provider execution is configured in `.ai/config.json` and remains opt-in.
+Provider execution is configured in `.ai-kit/config.json` and remains opt-in.
 ## Project contracts
 
-AI-Kit runtime contracts live in `.ai/contracts/`. Contracts owned by a
+AI-Kit runtime contracts live in `.ai-kit/contracts/`. Contracts owned by a
 multi-service project live in `.contracts/` and are governed through its
 registry. Supported kinds are JSON Schema, OpenAPI, AsyncAPI/CloudEvents,
 data metadata, and workflow metadata. Bootstrap may create an empty registry

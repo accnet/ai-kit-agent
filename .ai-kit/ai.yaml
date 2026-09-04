@@ -1,0 +1,8 @@
+version: 0.16.0
+mode: harness
+test_command: bash .ai-kit/tests/run.sh
+git_qa_command: bash .ai-kit/scripts/git-qa.sh check worktree
+skill_source: .ai-kit/skills
+harness_command: bash .ai-kit/scripts/harness.sh
+harness_config: .ai-kit/harness/config.json
+kit_config: .ai-kit/config.json

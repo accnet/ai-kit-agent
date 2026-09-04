@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Project contract tests; AI-Kit runtime tests remain under .ai/tests.
+# Project contract tests; AI-Kit runtime tests remain under .ai-kit/tests.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

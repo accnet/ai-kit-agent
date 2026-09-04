@@ -1,0 +1,4501 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-04T00:32:49Z",
+  "generator_version": "1.0.0",
+  "items": [
+    {
+      "id": "project-decisions:.project/ai-kit-agent-harness/decisions.md#canonical-structured-state",
+      "topic": "Canonical structured state",
+      "summary": "## Canonical structured state Harness-managed features use `state.json` as canonical execution state and render Markdown for humans. Legacy Markdown-only features remain supported.",
+      "source_path": ".project/ai-kit-agent-harness/decisions.md",
+      "source_hash": "38c58a17ea67bd46529f2a94fb708f4be99715716c0ebd995823d208599034b2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "canonical",
+        "structured",
+        "state",
+        "harness",
+        "managed",
+        "features",
+        "json",
+        "execution",
+        "render",
+        "markdown",
+        "humans",
+        "legacy"
+      ],
+      "budget": {
+        "summary_chars": 180,
+        "source_bytes": 183
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-agent-harness/decisions.md#decisions-ai-kit-agent-harness",
+      "topic": "Decisions — ai-kit-agent-harness",
+      "summary": "# Decisions — ai-kit-agent-harness",
+      "source_path": ".project/ai-kit-agent-harness/decisions.md",
+      "source_hash": "7ae3d61e5069352d42585395ab41c7387cfe061c8cad5468e3108b3a24237681",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "decisions",
+        "agent",
+        "harness"
+      ],
+      "budget": {
+        "summary_chars": 34,
+        "source_bytes": 38
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-agent-harness/decisions.md#dependency-free-local-runtime",
+      "topic": "Dependency-free local runtime",
+      "summary": "## Dependency-free local runtime Use Python 3.9 standard library, JSON/JSONL storage, and subprocess adapters.",
+      "source_path": ".project/ai-kit-agent-harness/decisions.md",
+      "source_hash": "29738150dae27af27cd3788d40bcd71d74b9d9d3e649edb299586fb5521bed1b",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "dependency",
+        "free",
+        "local",
+        "runtime",
+        "python",
+        "standard",
+        "library",
+        "json",
+        "jsonl",
+        "storage",
+        "subprocess",
+        "adapters"
+      ],
+      "budget": {
+        "summary_chars": 110,
+        "source_bytes": 113
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-agent-harness/decisions.md#llm-first-control-boundary",
+      "topic": "LLM-first control boundary",
+      "summary": "## LLM-first control boundary Models generate/revise plans, infer dependencies, choose implementation strategy, and synthesize evidence. The harness validates, authorizes, persists, schedules, limits retries, and records events.",
+      "source_path": ".project/ai-kit-agent-harness/decisions.md",
+      "source_hash": "707791cd028e14167df097c418a47f84f377a7d3cc098d79802993dd23a2bf24",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "first",
+        "control",
+        "boundary",
+        "models",
+        "generate",
+        "revise",
+        "plans",
+        "infer",
+        "dependencies",
+        "choose",
+        "implementation",
+        "strategy"
+      ],
+      "budget": {
+        "summary_chars": 228,
+        "source_bytes": 231
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-agent-harness/decisions.md#safe-provider-defaults",
+      "topic": "Safe provider defaults",
+      "summary": "## Safe provider defaults Provider calls are explicit and never bypass sandbox or permission controls. Planning and review are read-only; implementation gets bounded write access.",
+      "source_path": ".project/ai-kit-agent-harness/decisions.md",
+      "source_hash": "414f7334b861a7b2cf430f5e006d326b0c867aa6387dfd07e3cc4bc41fde2d54",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "safe",
+        "provider",
+        "defaults",
+        "calls",
+        "explicit",
+        "never",
+        "bypass",
+        "sandbox",
+        "permission",
+        "controls",
+        "planning",
+        "review"
+      ],
+      "budget": {
+        "summary_chars": 179,
+        "source_bytes": 181
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-codex-claude/decisions.md#advisory-model-routing",
+      "topic": "Advisory model routing",
+      "summary": "## Advisory model routing Codex is the primary agent and Claude is the preferred independent reviewer, but `.ai-kit/models.yaml` is explicitly advisory until an external orchestrator consumes it.",
+      "source_path": ".project/ai-kit-codex-claude/decisions.md",
+      "source_hash": "cd30a2fe220ef82053077d3ed878736d2d669e768e85be25dca6938cadd68ee2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "advisory",
+        "model",
+        "routing",
+        "codex",
+        "primary",
+        "agent",
+        "claude",
+        "preferred",
+        "independent",
+        "reviewer",
+        "models",
+        "yaml"
+      ],
+      "budget": {
+        "summary_chars": 195,
+        "source_bytes": 198
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-codex-claude/decisions.md#canonical-skills-with-generated-projections",
+      "topic": "Canonical skills with generated projections",
+      "summary": "## Canonical skills with generated projections Use `.ai-kit/skills/` as the editable workflow source and generate byte-identical `.agents/skills/` and `.claude/skills/` projections. Generated copies are preferred over symlinks for predictable Windows/WSL behavior.",
+      "source_path": ".project/ai-kit-codex-claude/decisions.md",
+      "source_hash": "78f59f6230e28243d431c0f1c1a1f8811eb753cb55e69d129a938ca237b89d84",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "canonical",
+        "skills",
+        "with",
+        "generated",
+        "projections",
+        "editable",
+        "workflow",
+        "source",
+        "generate",
+        "byte",
+        "identical",
+        "agents"
+      ],
+      "budget": {
+        "summary_chars": 264,
+        "source_bytes": 267
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-codex-claude/decisions.md#decisions-ai-kit-codex-claude",
+      "topic": "Decisions — ai-kit-codex-claude",
+      "summary": "# Decisions — ai-kit-codex-claude",
+      "source_path": ".project/ai-kit-codex-claude/decisions.md",
+      "source_hash": "5cc9be17bf39cfbbb0f70553eeb375dfc8d6827b379a577eeebe496b421cdd08",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "decisions",
+        "codex",
+        "claude"
+      ],
+      "budget": {
+        "summary_chars": 33,
+        "source_bytes": 37
+      }
+    },
+    {
+      "id": "project-decisions:.project/ai-kit-codex-claude/decisions.md#honest-enforcement-boundary",
+      "topic": "Honest enforcement boundary",
+      "summary": "## Honest enforcement boundary Generic Git hygiene and configured CI tests are mechanical. Planning, acceptance interpretation, independent review, and destructive-operation authorization remain task-aware workflow or host-control responsibilities.",
+      "source_path": ".project/ai-kit-codex-claude/decisions.md",
+      "source_hash": "1f65cd4fd0d58b1a1e98c1ec3de58dde8a4b972db1a2fc7aa490051aa3d45b9a",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "honest",
+        "enforcement",
+        "boundary",
+        "generic",
+        "hygiene",
+        "configured",
+        "tests",
+        "mechanical",
+        "planning",
+        "acceptance",
+        "interpretation",
+        "independent"
+      ],
+      "budget": {
+        "summary_chars": 248,
+        "source_bytes": 250
+      }
+    },
+    {
+      "id": "project-decisions:.project/controlled-orchestrator-v2/decisions.md#2026-08-22-baseline-and-cleanliness-are-mandatory",
+      "topic": "2026-08-22 Baseline and cleanliness are mandatory",
+      "summary": "## 2026-08-22 Baseline and cleanliness are mandatory - Decision: isolated execution requires an existing HEAD and a clean main tree; the harness never creates the initial commit or hides/stashes user changes. - Because: patch provenance and rollback are ambiguous without a stable base, and user changes must never be moved or overwritten implicitly.",
+      "source_path": ".project/controlled-orchestrator-v2/decisions.md",
+      "source_hash": "753d67983969cef710d7b564a93107939c8e4be0fe48981205ddf76a03b72f18",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "2026",
+        "baseline",
+        "cleanliness",
+        "mandatory",
+        "decision",
+        "isolated",
+        "execution",
+        "requires",
+        "existing",
+        "head",
+        "clean",
+        "main"
+      ],
+      "budget": {
+        "summary_chars": 350,
+        "source_bytes": 357
+      }
+    },
+    {
+      "id": "project-decisions:.project/controlled-orchestrator-v2/decisions.md#2026-08-22-main-index-remains-user-owned",
+      "topic": "2026-08-22 Main index remains user-owned",
+      "summary": "## 2026-08-22 Main index remains user-owned - Decision: staging is permitted only in the disposable worktree to capture new files; promotion applies without `--index` and leaves main changes unstaged. - Because: enabling controlled task execution does not authorize staging or commit.",
+      "source_path": ".project/controlled-orchestrator-v2/decisions.md",
+      "source_hash": "3a0aa995d97c47904983746864fb516d5e8b2584a5309e4e12e57e58d122ee9e",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "2026",
+        "main",
+        "index",
+        "remains",
+        "user",
+        "owned",
+        "decision",
+        "staging",
+        "permitted",
+        "only",
+        "disposable",
+        "worktree"
+      ],
+      "budget": {
+        "summary_chars": 284,
+        "source_bytes": 288
+      }
+    },
+    {
+      "id": "project-decisions:.project/controlled-orchestrator-v2/decisions.md#2026-08-22-review-before-promotion-detached-worktrees",
+      "topic": "2026-08-22 Review-before-promotion detached worktrees",
+      "summary": "## 2026-08-22 Review-before-promotion detached worktrees - Decision: implementation and verification run in a detached Git worktree; the main worktree receives an unstaged binary patch only after review approval. - Because: this separates model mutation from user state and makes scope, evidence, base drift, and review ordering mechanically enforceable. - Instead of: copying directories, trusting p",
+      "source_path": ".project/controlled-orchestrator-v2/decisions.md",
+      "source_hash": "83f13c596e5dd451665feadff9d1a4e63351f8fa851c4b18882db4e6dcbcd3cd",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "2026",
+        "review",
+        "before",
+        "promotion",
+        "detached",
+        "worktrees",
+        "decision",
+        "implementation",
+        "verification",
+        "worktree",
+        "main",
+        "receives"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 496
+      }
+    },
+    {
+      "id": "project-decisions:.project/controlled-orchestrator-v2/decisions.md#decisions-controlled-orchestrator-v2",
+      "topic": "Decisions — controlled-orchestrator-v2",
+      "summary": "# Decisions — controlled-orchestrator-v2",
+      "source_path": ".project/controlled-orchestrator-v2/decisions.md",
+      "source_hash": "2057e2749edba9cf61c2fe840fcbc21f68656c0b8e24b0eea80481175542f0cf",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "decisions",
+        "controlled",
+        "orchestrator"
+      ],
+      "budget": {
+        "summary_chars": 40,
+        "source_bytes": 44
+      }
+    },
+    {
+      "id": "project-decisions:.project/multi-service-contracts/decisions.md#d1-contract-registry-is-optional",
+      "topic": "D1 — Contract registry is optional",
+      "summary": "## D1 — Contract registry is optional Legacy plans remain valid. Multi-service enforcement activates when `services` or `contracts` is present, avoiding a breaking migration for small repositories.",
+      "source_path": ".project/multi-service-contracts/decisions.md",
+      "source_hash": "f5eb27fee12d2bc793304e2b3470bf058adc47c7afa57aa8810438f05b652a0e",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "contract",
+        "registry",
+        "optional",
+        "legacy",
+        "plans",
+        "remain",
+        "valid",
+        "multi",
+        "service",
+        "enforcement",
+        "activates",
+        "when"
+      ],
+      "budget": {
+        "summary_chars": 197,
+        "source_bytes": 201
+      }
+    },
+    {
+      "id": "project-decisions:.project/multi-service-contracts/decisions.md#d2-contract-source-approval-is-explicit",
+      "topic": "D2 — Contract source approval is explicit",
+      "summary": "## D2 — Contract source approval is explicit A reviewed implementation task does not automatically approve a public contract. A human-named `approve-contract` transition hashes the current source and changes it to approved.",
+      "source_path": ".project/multi-service-contracts/decisions.md",
+      "source_hash": "3785644b05e4eb55fead595d3470ef8e6e5062d418066cb94d6cb536033383b3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "contract",
+        "source",
+        "approval",
+        "explicit",
+        "reviewed",
+        "implementation",
+        "task",
+        "does",
+        "automatically",
+        "approve",
+        "public",
+        "human"
+      ],
+      "budget": {
+        "summary_chars": 223,
+        "source_bytes": 227
+      }
+    },
+    {
+      "id": "project-decisions:.project/multi-service-contracts/decisions.md#d3-one-task-one-service",
+      "topic": "D3 — One task, one service",
+      "summary": "## D3 — One task, one service Backend, frontend, and database tasks select one registered service. Cross-service behavior is decomposed into per-service tasks plus QA/integration or release tasks.",
+      "source_path": ".project/multi-service-contracts/decisions.md",
+      "source_hash": "226d0669bb5432aeda513e4e87260ee7d3a2d03872bfd384d7f0b43cc361dd3f",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "task",
+        "service",
+        "backend",
+        "frontend",
+        "database",
+        "tasks",
+        "select",
+        "registered",
+        "cross",
+        "behavior",
+        "decomposed",
+        "into"
+      ],
+      "budget": {
+        "summary_chars": 196,
+        "source_bytes": 200
+      }
+    },
+    {
+      "id": "project-decisions:.project/multi-service-contracts/decisions.md#d4-hierarchy-is-metadata-not-a-global-lock",
+      "topic": "D4 — Hierarchy is metadata, not a global lock",
+      "summary": "## D4 — Hierarchy is metadata, not a global lock Program and workstream identifiers connect plans while execution state and locks stay feature-local. This preserves bounded context and parallelism.",
+      "source_path": ".project/multi-service-contracts/decisions.md",
+      "source_hash": "e0f61079bd0427f1ce3389de7ceb2cd889ae087dfbab5b0db609f7f15b8a2a18",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "hierarchy",
+        "metadata",
+        "global",
+        "lock",
+        "program",
+        "workstream",
+        "identifiers",
+        "connect",
+        "plans",
+        "while",
+        "execution",
+        "state"
+      ],
+      "budget": {
+        "summary_chars": 197,
+        "source_bytes": 200
+      }
+    },
+    {
+      "id": "project-decisions:.project/multi-service-contracts/decisions.md#decisions-multi-service-contracts",
+      "topic": "Decisions — multi-service-contracts",
+      "summary": "# Decisions — multi-service-contracts",
+      "source_path": ".project/multi-service-contracts/decisions.md",
+      "source_hash": "022cf6892b80f9e9ec8d393da123bef442350f884599bd73db3c74a9c9a0c04a",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "decisions",
+        "multi",
+        "service",
+        "contracts"
+      ],
+      "budget": {
+        "summary_chars": 37,
+        "source_bytes": 41
+      }
+    },
+    {
+      "id": "project-decisions:.project/portable-installer/decisions.md#2026-08-22-git-qa-is-local-and-baseline-remains-user-owned",
+      "topic": "2026-08-22 Git QA is local and baseline remains user-owned",
+      "summary": "## 2026-08-22 Git QA is local and baseline remains user-owned - Decision: when Git exists, normal install delegates `setup --init` to Git QA and configures only local hooks; it never stages or commits, and `--no-git` opts out. - Because: local Git QA is useful by default, while history creation requires user review and explicit authority.",
+      "source_path": ".project/portable-installer/decisions.md",
+      "source_hash": "0e65f8aa5a7333e74b8638340583e595b28ff3eccf5f953c46e790ed2f2737f5",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "2026",
+        "local",
+        "baseline",
+        "remains",
+        "user",
+        "owned",
+        "decision",
+        "when",
+        "exists",
+        "normal",
+        "install",
+        "delegates"
+      ],
+      "budget": {
+        "summary_chars": 340,
+        "source_bytes": 344
+      }
+    },
+    {
+      "id": "project-decisions:.project/portable-installer/decisions.md#2026-08-22-preflight-and-no-force-overwrite-mode",
+      "topic": "2026-08-22 Preflight and no force-overwrite mode",
+      "summary": "## 2026-08-22 Preflight and no force-overwrite mode - Decision: existing managed files must be byte-identical; conflicts and symlinks stop the install before any managed file is written, with no `--force` escape. - Because: agent rules, hooks, and CI are security-sensitive project-owned inputs. - Instead of: last-writer-wins copies or heuristic text merging.",
+      "source_path": ".project/portable-installer/decisions.md",
+      "source_hash": "8c0ebd728d7af1c9a86d82f6ba2156f2b56927675ded1496179e70ae4c54a258",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "2026",
+        "preflight",
+        "force",
+        "overwrite",
+        "mode",
+        "decision",
+        "existing",
+        "managed",
+        "files",
+        "must",
+        "byte",
+        "identical"
+      ],
+      "budget": {
+        "summary_chars": 360,
+        "source_bytes": 365
+      }
+    },
+    {
+      "id": "project-decisions:.project/portable-installer/decisions.md#2026-08-22-self-contained-copied-kit-bootstrap",
+      "topic": "2026-08-22 Self-contained copied-kit bootstrap",
+      "summary": "## 2026-08-22 Self-contained copied-kit bootstrap - Decision: the executable, manifest, templates, and documentation all live below `.ai-kit/install/`, so copying `.ai-kit/` carries everything needed to bootstrap a root. - Because: portability must not depend on a root file that does not yet exist. - Instead of: a root-level setup script or a network downloader.",
+      "source_path": ".project/portable-installer/decisions.md",
+      "source_hash": "8c4c67bccda66b1f6a4bf406f39ad30b1e4ae82de367c305b705f35dec80803e",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "2026",
+        "self",
+        "contained",
+        "copied",
+        "bootstrap",
+        "decision",
+        "executable",
+        "manifest",
+        "templates",
+        "documentation",
+        "live",
+        "below"
+      ],
+      "budget": {
+        "summary_chars": 364,
+        "source_bytes": 369
+      }
+    },
+    {
+      "id": "project-decisions:.project/portable-installer/decisions.md#decisions-portable-installer",
+      "topic": "Decisions — portable-installer",
+      "summary": "# Decisions — portable-installer",
+      "source_path": ".project/portable-installer/decisions.md",
+      "source_hash": "0de48b9def50076cb30f5536399be792a296cebcf777079917eba3d3635d8dae",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 1,
+      "keywords": [
+        "decisions",
+        "portable",
+        "installer"
+      ],
+      "budget": {
+        "summary_chars": 32,
+        "source_bytes": 36
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#ai-kit-and-project-tests-have-separate-roots",
+      "topic": "AI-Kit and project tests have separate roots",
+      "summary": "## AI-Kit and project tests have separate roots - Rule: Keep reusable harness/installer/DAG/profile tests in `.ai-kit/tests/`; put project suites in `/tests` with their own explicit manifest and runner. - Because: Syncing AI-Kit must never carry a theme's regression tests into another repository, while explicit manifests still prevent stale suites from re-entering QA. - Discovered: 2026-08-30, fea",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "84ab67c70e3375003e102ef7dfff7bb8216db601d5dd8db5c6b519260eb4d1b2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "project",
+        "tests",
+        "have",
+        "separate",
+        "roots",
+        "rule",
+        "keep",
+        "reusable",
+        "harness",
+        "installer",
+        "profile",
+        "suites"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 430
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#ai-kit-scripts-py-atomic-writes-must-stay-python-3-9-safe",
+      "topic": "`.ai-kit/scripts/*.py` atomic writes must stay Python 3.9-safe",
+      "summary": "## `.ai-kit/scripts/*.py` atomic writes must stay Python 3.9-safe - Rule: Use `Path.write_bytes(content.encode(\"utf-8\"))` for an atomic-write helper, not `Path.write_text(..., newline=\"\\n\")` — the `newline` keyword is Python 3.10+-only and raises `TypeError` on 3.9. - Because: The kit's own runtime targets Python 3.9 (see the `ai-kit-agent-harness` dependency-free-runtime decision); a script that ",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "0c426e90c12b8308a9f5ea44d6cdcde828c03f00cc91b6143d6fcdfd1184d279",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "scripts",
+        "atomic",
+        "writes",
+        "must",
+        "stay",
+        "python",
+        "safe",
+        "rule",
+        "path",
+        "write",
+        "bytes",
+        "content"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 580
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#ai-scripts-py-atomic-writes-must-stay-python-3-9-safe",
+      "topic": "`.ai-kit/scripts/*.py` atomic writes must stay Python 3.9-safe",
+      "summary": "## `.ai-kit/scripts/*.py` atomic writes must stay Python 3.9-safe - Rule: Use `Path.write_bytes(content.encode(\"utf-8\"))` for an atomic-write helper, not `Path.write_text(..., newline=\"\\n\")` — the `newline` keyword is Python 3.10+-only and raises `TypeError` on 3.9. - Because: The kit's own runtime targets Python 3.9 (see the `ai-kit-agent-harness` dependency-free-runtime decision); a script that only",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "293cf4153b24e5d05c4fd82dcd7a3ab3fe2c5929dbf332b8205858808b0d9253",
+      "status": "stale",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "scripts",
+        "atomic",
+        "writes",
+        "must",
+        "stay",
+        "python",
+        "safe",
+        "rule",
+        "path",
+        "write",
+        "bytes",
+        "content"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 576
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#canonical-cross-feature-barriers-fail-closed",
+      "topic": "Canonical cross-feature barriers fail closed",
+      "summary": "## Canonical cross-feature barriers fail closed - Rule: Canonical plans resolve declared feature dependencies from target `state.json` when present, otherwise legacy `tasks.md`; malformed state, cycles, and incomplete targets block every local task. - Because: A generated Markdown view must never override canonical execution state or allow a dependent feature to start early. - Discovered: 2026-08-",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "ad8b909a1e4a1877412fcd7541cfbddc1ea172e726c92f27122bae03b2a9ff9d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "canonical",
+        "cross",
+        "feature",
+        "barriers",
+        "fail",
+        "closed",
+        "rule",
+        "plans",
+        "resolve",
+        "declared",
+        "dependencies",
+        "from"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 443
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#convention-title",
+      "topic": "<convention title>",
+      "summary": "## <convention title> - Rule: <what to do> - Because: <why — one line> - Discovered: <YYYY-MM-DD>, features/<feature> ``` Rules: existing project code wins over any written convention when they conflict — fix the entry, not the code. Keep entries short — this file is loaded often. ---",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "f7dd61da161b2686c317662c0518590bf7f18782bea979a41c497224adbf3503",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "convention",
+        "title",
+        "rule",
+        "what",
+        "because",
+        "line",
+        "discovered",
+        "yyyy",
+        "features",
+        "feature",
+        "rules",
+        "existing"
+      ],
+      "budget": {
+        "summary_chars": 285,
+        "source_bytes": 295
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#conventions",
+      "topic": "Conventions",
+      "summary": "# Conventions Project-specific conventions learned during work — unique to THIS codebase. Primary convention source alongside the code itself. Newest first. Format: ```",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "30c65896a054a187ea770dbdfc33419e6f3867920d0edd155ae3636e0e4e1575",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "conventions",
+        "project",
+        "specific",
+        "learned",
+        "during",
+        "work",
+        "unique",
+        "this",
+        "codebase",
+        "primary",
+        "convention",
+        "source"
+      ],
+      "budget": {
+        "summary_chars": 168,
+        "source_bytes": 173
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#cross-feature-barriers-and-qa-profiles",
+      "topic": "Cross-feature barriers and QA profiles",
+      "summary": "## Cross-feature barriers and QA profiles - Rule: Declare cross-workstream barriers as `Feature dependencies: <feature-id>:<task-id>, ...`; a target is satisfied only when that task exists and is checked. Store reusable QA commands in `.ai-kit/qa-profiles.json` as argument arrays with a safe cwd, bounded timeout, and evidence metadata. - Because: A single-feature DAG cannot otherwise prevent dispa",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "4db61bfbe992f8414fb6ac6919f1a4482f1d60c5c1008f135a019235874428fc",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "cross",
+        "feature",
+        "barriers",
+        "profiles",
+        "rule",
+        "declare",
+        "workstream",
+        "dependencies",
+        "task",
+        "target",
+        "satisfied",
+        "only"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 576
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#full-qa-reporting-is-compact-but-coverage-preserving",
+      "topic": "Full QA reporting is compact but coverage-preserving",
+      "summary": "## Full QA reporting is compact but coverage-preserving - Rule: Use `.ai-kit/scripts/qa-report.sh --profile ai-kit|theme|browser|all` (default `all`) to report existing QA commands. `all` keeps their fixed order, runs every selected command after a failure, and exits non-zero if any failed; reject unknown or duplicate profiles. - Because: Compact local artifacts reduce agent-context tokens without",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "bbdc225ed4954c518d1ef57e7b6d753afe0f8e2500a560379e35cbf9939bf15f",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "full",
+        "reporting",
+        "compact",
+        "coverage",
+        "preserving",
+        "rule",
+        "scripts",
+        "report",
+        "profile",
+        "theme",
+        "browser",
+        "default"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 517
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#harness-cli-structured-input-uses-name-file-path-not-inline-json",
+      "topic": "Harness CLI structured input uses `--<name>-file <path>`, not inline JSON",
+      "summary": "## Harness CLI structured input uses `--<name>-file <path>`, not inline JSON - Rule: A new `.ai-kit/harness/cli.py` subcommand that needs a structured (dict/list) argument should accept a JSON file path (e.g. `--answers-file <path>`), reading it with the existing `try: json.loads(Path(...).read_text()) except (OSError, json.JSONDecodeError): raise EngineError(...)` pattern (`cli.py`'s scripted-pro",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "77d5520720803aeccab8262a3f8da8e7cb3b6f021a14321ef37751c23a64c563",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "harness",
+        "structured",
+        "input",
+        "uses",
+        "name",
+        "file",
+        "path",
+        "inline",
+        "json",
+        "rule",
+        "subcommand",
+        "that"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 804
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#harness-structured-payload-hashing-uses-policy-py-s-canonical-digest",
+      "topic": "Harness structured-payload hashing uses `policy.py`'s `canonical_digest`",
+      "summary": "## Harness structured-payload hashing uses `policy.py`'s `canonical_digest` - Rule: To hash an in-memory structured (dict/list) payload anywhere in `.ai-kit/harness/`, reuse `policy.py`'s `canonical_digest(value)` (`\"sha256:\" + hex(sha256(json.dumps(value, sort_keys=True, separators=(\",\",\":\"))))`) — the same function `plan_revision_digest`/`task_action_digest` already use. Reserve `qa_report.py`'s",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "d63246bf492c2ed83ab3302dac99aa9d4840d81d89579c17f0a2f470c7b2d25c",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "harness",
+        "structured",
+        "payload",
+        "hashing",
+        "uses",
+        "policy",
+        "canonical",
+        "digest",
+        "rule",
+        "hash",
+        "memory",
+        "dict"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 776
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#native-workers-require-isolated-worktrees",
+      "topic": "Native workers require isolated worktrees",
+      "summary": "## Native workers require isolated worktrees - Rule: When orchestration requires per-worker worktrees, `execution.isolated_worktree.required` must also be true. - Because: Contradictory flags permit parallel workers to share and corrupt a worktree. - Discovered: 2026-08-30, features/ai-kit-optimization",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "9155201c5283e78007506427fc22b5f0d0c2780403cec66aceaf71477bcfc3e3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "native",
+        "workers",
+        "require",
+        "isolated",
+        "worktrees",
+        "rule",
+        "when",
+        "orchestration",
+        "requires",
+        "worker",
+        "execution",
+        "worktree"
+      ],
+      "budget": {
+        "summary_chars": 303,
+        "source_bytes": 305
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#new-committed-top-level-directories-need-a-check-gates-sh-exemption",
+      "topic": "New committed top-level directories need a `check-gates.sh` exemption",
+      "summary": "## New committed top-level directories need a `check-gates.sh` exemption - Rule: When adding a new top-level directory meant to hold kit/plan documentation (or a projection of already-exempt content, e.g. quoting `.ai-kit/knowledge/`), add it to `check-gates.sh`'s `.workspace/`-mention exemption `case` list, alongside `.ai-kit/*`/`.project/*`. - Because: The scan otherwise fails G4 on any file tha",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "1c3b6bb96f082aa8390eeb618688f94ea6ab5e8fd15a7237c8d52895bf6f42af",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "committed",
+        "level",
+        "directories",
+        "need",
+        "check",
+        "gates",
+        "exemption",
+        "rule",
+        "when",
+        "adding",
+        "directory",
+        "meant"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 594
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#qa-commands-declare-their-working-directory",
+      "topic": "QA commands declare their working directory",
+      "summary": "## QA commands declare their working directory - Rule: Record command, cwd, timeout, and whether evidence is required in the task/QA record; portable profiles should use `.` when an optional test directory may not exist in a freshly bootstrapped project. - Because: Running an E2E command from the wrong directory produces a false failure or incomplete coverage. - Discovered: 2026-08-30, features/ai",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "15685e9ea56c3611c0f3d3f91761096d12f5084a4a8913b6bc6ba8fe3570aa32",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "commands",
+        "declare",
+        "their",
+        "working",
+        "directory",
+        "rule",
+        "record",
+        "command",
+        "timeout",
+        "whether",
+        "evidence",
+        "required"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 419
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#qa-review-findings-are-coordinator-owned",
+      "topic": "QA/review findings are coordinator-owned",
+      "summary": "## QA/review findings are coordinator-owned - Rule: Record a failed criterion before retrying or replanning; same-scope defects retry the source task, while scope-expanding defects use a uniquely linked fix task. - Because: A provider or worker must not silently rewrite execution history, and every fix needs a new G2/G3 evidence trail. - Discovered: 2026-08-30, features/ai-kit-remediation-loop (em",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "b5996929be8efced0d97aeea9fb7b4208ab7dbc2b0f49be3b6d801dacab4f84f",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "review",
+        "findings",
+        "coordinator",
+        "owned",
+        "rule",
+        "record",
+        "failed",
+        "criterion",
+        "before",
+        "retrying",
+        "replanning",
+        "same"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 448
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#session-pointers-are-advisory-until-validated",
+      "topic": "Session pointers are advisory until validated",
+      "summary": "## Session pointers are advisory until validated - Rule: A session feature must be active in `.project/INDEX.md` and its task must still be open; stale pointers fail doctor checks. - Because: `.workspace/session.md` can outlive a rolled-back or superseded feature. - Discovered: 2026-08-30, features/ai-kit-optimization",
+      "source_path": ".ai-kit/knowledge/conventions.md",
+      "source_hash": "46a6dcf1981530c3a8a46a6855b17517415c3404d3b28357d0727970b2095bf2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "session",
+        "pointers",
+        "advisory",
+        "until",
+        "validated",
+        "rule",
+        "feature",
+        "must",
+        "active",
+        "project",
+        "index",
+        "task"
+      ],
+      "budget": {
+        "summary_chars": 319,
+        "source_bytes": 321
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-07-11-canonical-instruction-entry-point",
+      "topic": "2026-07-11 Canonical instruction entry point",
+      "summary": "## 2026-07-11 Canonical instruction entry point - Decision: AGENTS.md is the single canonical rules file; tool files (CLAUDE.md, .cursor/rules, ...) are thin pointers - Because: 28+ tools read AGENTS.md natively; duplicated rules drift - Instead of: maintaining parallel per-tool rule files - Scope: whole project - Source: features/upgrade-2026",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "1b580b772c9fb7a7dc4fc054005261000de8437efa642a88798160e63ab7bf25",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "canonical",
+        "instruction",
+        "entry",
+        "point",
+        "decision",
+        "agents",
+        "single",
+        "rules",
+        "file",
+        "tool",
+        "files"
+      ],
+      "budget": {
+        "summary_chars": 345,
+        "source_bytes": 346
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-07-11-four-tier-split-features-intent-vs-project-execution",
+      "topic": "2026-07-11 Four-tier split: features/ (intent) vs .project/ (execution)",
+      "summary": "## 2026-07-11 Four-tier split: features/ (intent) vs .project/ (execution) - Decision: features/ holds requirements+research (user + Researcher write only); .project/ holds plan/tasks/architecture/decisions/progress (agents write); tasks.md replaces todo.md; lifecycle via .project/INDEX.md metadata, not folder moves (except archive/) - Because: separating intent from execution makes plans regenera",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "1a406d158c7fe4d35d7d70b7fd3f9db9bc9f244af87b9cbc2073d0bb142d29db",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "four",
+        "tier",
+        "split",
+        "features",
+        "intent",
+        "project",
+        "execution",
+        "decision",
+        "holds",
+        "requirements",
+        "research"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 726
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-07-11-multi-agent-coordination-claim-by-commit-orchestrator-planner",
+      "topic": "2026-07-11 Multi-agent coordination: claim-by-commit, orchestrator = Planner",
+      "summary": "## 2026-07-11 Multi-agent coordination: claim-by-commit, orchestrator = Planner - Decision: parallel agents coordinate in two modes — tool-native (Agent Teams etc.) or repo-native claim-by-commit on tasks.md (push rejected = task taken); one worktree + `agent/<feature>-<task-id>` branch per task; Planner doubles as orchestrator (no 11th agent), never writes feature code while orchestrating; 3 safe",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "9600accdaf3bec67f1ba98dfb4f78ce217332359a70741fb374ed8185cd5dfce",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "multi",
+        "agent",
+        "coordination",
+        "claim",
+        "commit",
+        "orchestrator",
+        "planner",
+        "decision",
+        "parallel",
+        "agents",
+        "coordinate"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 789
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-07-11-p6-module-index-progressive-disclosure-dropped",
+      "topic": "2026-07-11 P6 (module INDEX / progressive disclosure) dropped",
+      "summary": "## 2026-07-11 P6 (module INDEX / progressive disclosure) dropped - Decision: no modules/INDEX.md, no module frontmatter — P6 cancelled by user - Because: user call; AGENTS.md directory map + module \"When to Load\" sections cover routing adequately at current kit size (20 modules) - Instead of: 20 frontmatter edits + INDEX table - Scope: .ai-kit/modules/ - Source: upgrade-2026 close-out",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "5d559d71c750d0904280ea43767ebf23b18a58d48a63be60618b58f2aa9454a8",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "module",
+        "index",
+        "progressive",
+        "disclosure",
+        "dropped",
+        "decision",
+        "modules",
+        "frontmatter",
+        "cancelled",
+        "user",
+        "because"
+      ],
+      "budget": {
+        "summary_chars": 387,
+        "source_bytes": 391
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-07-11-p6-revived-module-frontmatter-index-context-pack-supersedes-p6-dropped",
+      "topic": "2026-07-11 P6 revived: module frontmatter + INDEX + context-pack (supersedes \"P6 dropped\")",
+      "summary": "## 2026-07-11 P6 revived: module frontmatter + INDEX + context-pack (supersedes \"P6 dropped\") - Decision: all 22 modules carry frontmatter (name, description); modules/INDEX.md routes by situation; context-pack.sh emits deterministic tier-1 pack per task - Because: module count grew, token cost became a stated priority (Retrieval Engine analysis), and \"When to Load\" inside the body forces reading ",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "96b9ae922583e8709f12fe3ddaca639cefcf97c3edcdfa4b6051083febe2fd6d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "revived",
+        "module",
+        "frontmatter",
+        "index",
+        "context",
+        "pack",
+        "supersedes",
+        "dropped",
+        "decision",
+        "modules",
+        "carry"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 683
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-07-11-playbooks-are-skill-md-compatible-repo-is-canonical-for-skills",
+      "topic": "2026-07-11 Playbooks are SKILL.md-compatible; repo is canonical for skills",
+      "summary": "## 2026-07-11 Playbooks are SKILL.md-compatible; repo is canonical for skills - Decision: all playbooks carry Agent Skills frontmatter (name, description); export = copy as `<name>/SKILL.md` into a tool's skills dir; repo remains the canonical source, tool dirs are projections - Because: Agent Skills is the AAIF open standard read by 32+ tools; repo-canonical keeps team + agents on one version - I",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "3b503a5063544c39ad039a2d95d02eed2d86340971f920a914387bcc88fe68ed",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "playbooks",
+        "skill",
+        "compatible",
+        "repo",
+        "canonical",
+        "skills",
+        "decision",
+        "carry",
+        "agent",
+        "frontmatter",
+        "name"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 510
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-07-11-playbooks-removed-entirely-supersedes-playbooks-are-skill-md-compatible",
+      "topic": "2026-07-11 Playbooks removed entirely (supersedes \"Playbooks are SKILL.md-compatible\")",
+      "summary": "## 2026-07-11 Playbooks removed entirely (supersedes \"Playbooks are SKILL.md-compatible\") - Decision: .ai-kit/playbooks/ deleted. Stack conventions now come from: existing project code (canonical) → .ai-kit/knowledge/conventions.md (learned) → Agent Skills installed in the host tool (ecosystem expertise) - Because: user call — the Agent Skills ecosystem already ships maintained stack expertise (St",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "af830d017532359adfad6d8b8fcdbde87a191f4038e94c1b58f4c17eb68c825e",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "playbooks",
+        "removed",
+        "entirely",
+        "supersedes",
+        "skill",
+        "compatible",
+        "decision",
+        "deleted",
+        "stack",
+        "conventions",
+        "come"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 716
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-08-22-canonical-agent-skills-for-codex-and-claude",
+      "topic": "2026-08-22 Canonical Agent Skills for Codex and Claude",
+      "summary": "## 2026-08-22 Canonical Agent Skills for Codex and Claude - Decision: reusable AI-Kit workflows live in `.ai-kit/skills/` and are generated byte-identically into `.agents/skills/` and `.claude/skills/`; model routing stays explicitly advisory without an orchestrator - Because: both tools support progressively disclosed Agent Skills but use different repository discovery paths; generated projection",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "3083ea5ab7b24ed603d9b4f7464d8b81515a4a2b50ce3d506849a541820ed090",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "canonical",
+        "agent",
+        "skills",
+        "codex",
+        "claude",
+        "decision",
+        "reusable",
+        "workflows",
+        "live",
+        "generated",
+        "byte"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 664
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-08-22-codex-cli-task-execution-is-explicitly-configured",
+      "topic": "2026-08-22 Codex CLI Task Execution Is Explicitly Configured",
+      "summary": "## 2026-08-22 Codex CLI Task Execution Is Explicitly Configured - Decision: `.ai-kit/config.json` controls opt-in harness task execution through Codex CLI; when enabled, `step` selects only Codex and applies the configured `gpt-5.6-terra` model - Because: model/provider routing must be durable, auditable, and mechanically enforced without making ordinary QA invoke a billed service - Boundary: the ",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "59d57e46579610278051873c9b754d68c99f2152e690ed23cdac7ee2ff06dd00",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "codex",
+        "task",
+        "execution",
+        "explicitly",
+        "configured",
+        "decision",
+        "config",
+        "json",
+        "controls",
+        "harness",
+        "through"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 656
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-08-22-independent-review-is-explicitly-configured",
+      "topic": "2026-08-22 Independent Review Is Explicitly Configured",
+      "summary": "## 2026-08-22 Independent Review Is Explicitly Configured - Decision: QA and G3 remain mandatory, while reviewer separation is controlled by `.ai-kit/config.json`; `review.independent_enabled=false` is the fail-safe default and `true` must be set manually before independent review is required - Because: local provider authentication or availability must not block otherwise complete work unless mai",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "bfcb5a4591bb1710d3d7b320686ffb661d2d23756b0cbae4c05011aed07bd996",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "independent",
+        "review",
+        "explicitly",
+        "configured",
+        "decision",
+        "remain",
+        "mandatory",
+        "while",
+        "reviewer",
+        "separation",
+        "controlled"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 779
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-08-22-llm-first-runtime-with-deterministic-control-plane-supersedes-advisory-routing-when-harness-is-used",
+      "topic": "2026-08-22 LLM-first runtime with deterministic control plane (supersedes advisory routing when harness is used)",
+      "summary": "## 2026-08-22 LLM-first runtime with deterministic control plane (supersedes advisory routing when harness is used) - Decision: harness-managed features use Codex/Claude for reasoning and `state.json` plus sequenced events for machine state; the harness enforces approvals, scheduling, actual mutation scope, retry, provider-separated review, and recovery - Because: intelligent plan/replan must rema",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "a0ac745fc2bb5b29cf63657497402e6503e0582479500d7f14a88a26c0c27785",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "first",
+        "runtime",
+        "with",
+        "deterministic",
+        "control",
+        "plane",
+        "supersedes",
+        "advisory",
+        "routing",
+        "when",
+        "harness"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 773
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-08-22-qa-and-review-cli-routing-is-independently-configured",
+      "topic": "2026-08-22 QA and Review CLI Routing Is Independently Configured",
+      "summary": "## 2026-08-22 QA and Review CLI Routing Is Independently Configured - Decision: `.ai-kit/config.json` contains separate disabled-by-default QA and Review routes selecting `codex-cli`/`gpt-5.6-sol` or `claude-cli`/`claude-sonnet-5` - Because: quality work may need a stronger or cross-model agent without coupling provider choice to normal implementation or silently invoking a billed service - Bounda",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "4fb7db9ac0c32f084dd71806e95969885be69aa61a96d12940a2982a241cc636",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "review",
+        "routing",
+        "independently",
+        "configured",
+        "decision",
+        "config",
+        "json",
+        "contains",
+        "separate",
+        "disabled",
+        "default"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 716
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-08-30-grok-cli-is-the-generic-implementation-provider",
+      "topic": "2026-08-30 Grok CLI Is the Generic Implementation Provider",
+      "summary": "## 2026-08-30 Grok CLI Is the Generic Implementation Provider - Decision: `execution.task_cli` selects `grok` with no pinned model for generic harness implementation tasks; Codex remains the explicit planner/default primary identity and QA/review routes remain unchanged. - Because: implementation task execution needs an opt-in Grok route without coupling it to planning or quality-provider policy. ",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "92666ca7b5ab9504b31a515964b71ed3132ed03dae22853a19f9a3d2c5dc6a6d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "grok",
+        "generic",
+        "implementation",
+        "provider",
+        "decision",
+        "execution",
+        "task",
+        "selects",
+        "with",
+        "pinned",
+        "model"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 742
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#2026-08-30-ide-native-parallel-orchestration-is-coordinator-owned",
+      "topic": "2026-08-30 IDE-Native Parallel Orchestration Is Coordinator-Owned",
+      "summary": "## 2026-08-30 IDE-Native Parallel Orchestration Is Coordinator-Owned - Decision: parallel implementation uses a versioned AI-Kit orchestration contract; Codex IDE owns native-worker scheduling and worktree creation, while AI-Kit validates DAG readiness, disjoint file scopes, worker manifests, and coordinator-owned transitions. - Because: `.ai-kit` cannot create native Codex workers or call a provi",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "62cecefca50e5d6ec34f99c8f9ebdf0ef977d1fa9a1593c4c43edbc728efed68",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "native",
+        "parallel",
+        "orchestration",
+        "coordinator",
+        "owned",
+        "decision",
+        "implementation",
+        "uses",
+        "versioned",
+        "contract",
+        "codex"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 768
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#decisions",
+      "topic": "Decisions",
+      "summary": "# Decisions Cross-feature architecture and technology decisions. One entry per decision, newest first. Format: ```",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "6b5b596a413ac0d97d2bda410a89e74bf055ee18b97d996f3e9cbce08e096456",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "decisions",
+        "cross",
+        "feature",
+        "architecture",
+        "technology",
+        "entry",
+        "decision",
+        "newest",
+        "first",
+        "format"
+      ],
+      "budget": {
+        "summary_chars": 114,
+        "source_bytes": 117
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/decisions.md#yyyy-mm-dd-decision-title",
+      "topic": "<YYYY-MM-DD> <decision title>",
+      "summary": "## <YYYY-MM-DD> <decision title> - Decision: <what was chosen> - Because: <constraint or reason> - Instead of: <rejected alternative, one line> - Scope: <where this binds — module, stack, whole project> - Source: features/<feature> ``` Rules: entries are append-only; a reversed decision gets a NEW entry linking the old one, the old entry is never edited. Only decisions that bind FUTURE work belong",
+      "source_path": ".ai-kit/knowledge/decisions.md",
+      "source_hash": "01fd87b762504950ccc0c162347feb849e4e40fb5c1de9e3a6a875ff5e1d36c3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "yyyy",
+        "decision",
+        "title",
+        "what",
+        "chosen",
+        "because",
+        "constraint",
+        "reason",
+        "instead",
+        "rejected",
+        "alternative",
+        "line"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 473
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/postmortems.md#2026-09-03-subprocess-tests-against-bash-scripts-failed-on-windows-dev-machine",
+      "topic": "2026-09-03 Subprocess tests against bash scripts failed on Windows dev machine",
+      "summary": "## 2026-09-03 Subprocess tests against bash scripts failed on Windows dev machine - Impact: A new mechanics-test file's subprocess calls to a bash script intermittently failed (`No such file or directory` from a mangled path; a `UnicodeDecodeError`/`None` stdout on `text=True` capture) depending on which process launched them. - Root cause: This dev machine has multiple `bash`/`python3` binaries r",
+      "source_path": ".ai-kit/knowledge/postmortems.md",
+      "source_hash": "d45a405abb639dcda1abf1f0cd6c96f8376ac71ac5ba9e561fcec0968556a890",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "subprocess",
+        "tests",
+        "against",
+        "bash",
+        "scripts",
+        "failed",
+        "windows",
+        "machine",
+        "impact",
+        "mechanics",
+        "test"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1287
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/postmortems.md#postmortems",
+      "topic": "Postmortems",
+      "summary": "# Postmortems What went wrong and what it taught us — so the same mistake isn't paid for twice. Newest first. Format: ```",
+      "source_path": ".ai-kit/knowledge/postmortems.md",
+      "source_hash": "1e6f663a0da8926200fbaddc322e567a05ec0dd797d603c47979518baa5e0131",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "postmortems",
+        "what",
+        "went",
+        "wrong",
+        "taught",
+        "same",
+        "mistake",
+        "paid",
+        "twice",
+        "newest",
+        "first",
+        "format"
+      ],
+      "budget": {
+        "summary_chars": 121,
+        "source_bytes": 126
+      }
+    },
+    {
+      "id": "ai-knowledge:.ai-kit/knowledge/postmortems.md#yyyy-mm-dd-what-broke",
+      "topic": "<YYYY-MM-DD> <what broke>",
+      "summary": "## <YYYY-MM-DD> <what broke> - Impact: <what happened, one line> - Root cause: <the real cause, not the symptom> - Lesson: <the rule that prevents recurrence> - Enforced by: <gate/checklist/convention updated, or \"not yet\"> ``` Rules: blameless — describe systems, not culprits. Every postmortem must end in a change: a gate, a checklist item, a convention entry, or an explicit \"accepted risk\". A le",
+      "source_path": ".ai-kit/knowledge/postmortems.md",
+      "source_hash": "e2b40902cdbcd54312d3ede999908b706615ce645548c8ba20a8b0c850f93046",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "yyyy",
+        "what",
+        "broke",
+        "impact",
+        "happened",
+        "line",
+        "root",
+        "cause",
+        "real",
+        "symptom",
+        "lesson",
+        "rule"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 445
+      }
+    },
+    {
+      "id": "contract:.contracts/block-definitions.schema.json#whole",
+      "topic": "Builder block definitions response v1",
+      "summary": "Capability-protected client projection returned by GET /wp-json/starterkit/v1/blocks.",
+      "source_path": ".contracts/block-definitions.schema.json",
+      "source_hash": "1148ee9ba9e26f58c73c92835558d07beaf455fef2c25d90ce095ed5e9c49441",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "builder",
+        "block",
+        "definitions",
+        "response",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 85,
+        "source_bytes": 1274
+      }
+    },
+    {
+      "id": "contract:.contracts/block.schema.json#whole",
+      "topic": "Block manifest",
+      "summary": "Schema for a Shopify OS 2.0-style block manifest.",
+      "source_path": ".contracts/block.schema.json",
+      "source_hash": "89f6b9566eddfab4ffd370be1b2c2aadb0037bac04cb991b369dcce8d54dbca7",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "block",
+        "manifest",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 49,
+        "source_bytes": 2005
+      }
+    },
+    {
+      "id": "contract:.contracts/block.v2.schema.json#whole",
+      "topic": "Grouped block manifest v2",
+      "summary": "Breaking schema-v2 Block manifest. Placement, lifecycle capabilities, and commerce compatibility family are theme-owned registry metadata and never instance-controlled values.",
+      "source_path": ".contracts/block.v2.schema.json",
+      "source_hash": "a0fd9a1d79d56416b6153589426a5539fb34dfc1e9ac8a6bbbf7bc855e242b4d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "grouped",
+        "block",
+        "manifest",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 175,
+        "source_bytes": 3740
+      }
+    },
+    {
+      "id": "contract:.contracts/builder-preview.v2.schema.json#whole",
+      "topic": "Builder Preview HTTP and iframe protocol v2",
+      "summary": "Versioned no-store Preview protocol. Render messages use one immutable Header/Page/Footer snapshot; bridge messages carry revision and explicit Container/Column/Block ownership.",
+      "source_path": ".contracts/builder-preview.v2.schema.json",
+      "source_hash": "0c9ef499e7642b2d336db03725e5c2232e8147dc7e83cac0156a9af232b51724",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "builder",
+        "preview",
+        "http",
+        "iframe",
+        "protocol",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 177,
+        "source_bytes": 14188
+      }
+    },
+    {
+      "id": "contract:.contracts/context.schema.json#whole",
+      "topic": "Template context",
+      "summary": "Context exposed to section and block rendering.",
+      "source_path": ".contracts/context.schema.json",
+      "source_hash": "cd593707067b0ed781ca9c364c03179a9ae2e23100d2c90c8ab188a4819ec9d8",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "template",
+        "context",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 47,
+        "source_bytes": 3781
+      }
+    },
+    {
+      "id": "contract:.contracts/display-rule.schema.json#whole",
+      "topic": "Display rules",
+      "summary": "Rules evaluated by StarterKit\\Rules\\DisplayRuleEvaluator to determine whether a section renders.",
+      "source_path": ".contracts/display-rule.schema.json",
+      "source_hash": "9cc669cd0ac59ec6a4529fe2daf5f75936e5c3b9f8e696c7fa015ecf43674ba2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "display",
+        "rules",
+        "rule",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 96,
+        "source_bytes": 2948
+      }
+    },
+    {
+      "id": "contract:.contracts/preset.v1.schema.json#whole",
+      "topic": "Creation-only Container preset v1",
+      "summary": "A context-bounded Container recipe. Presets deliberately use arrays and carry no mutable instance IDs or order arrays; the Builder generates fresh IDs and canonical maps/orders when applying a preset.",
+      "source_path": ".contracts/preset.v1.schema.json",
+      "source_hash": "e9da0d7e4363c7fa44b9cbc166b56b9efa28bb47c6b90fcd80038546d8549c6e",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "creation",
+        "only",
+        "container",
+        "preset",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 200,
+        "source_bytes": 3104
+      }
+    },
+    {
+      "id": "contract:.contracts/section.schema.json#whole",
+      "topic": "Section manifest",
+      "summary": "Schema for a Shopify OS 2.0-style section definition manifest.",
+      "source_path": ".contracts/section.schema.json",
+      "source_hash": "ab6e00d82b6932fac72f6a50acf2ac27311b3609687785b39c246db2a08a9848",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "section",
+        "manifest",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 62,
+        "source_bytes": 5093
+      }
+    },
+    {
+      "id": "contract:.contracts/settings.schema.json#whole",
+      "topic": "Settings schema map",
+      "summary": "A map of setting identifiers to schema-driven control definitions.",
+      "source_path": ".contracts/settings.schema.json",
+      "source_hash": "116c7c0df10bc0f7b0d37dd6a4002ebc319575a751b4708bd070f572d6f02e62",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "settings",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 66,
+        "source_bytes": 2355
+      }
+    },
+    {
+      "id": "contract:.contracts/surface.schema.json#whole",
+      "topic": "Builder surfaces",
+      "summary": "Response of GET /starterkit/v1/surfaces: the builder's editable surfaces. Envelope shape matches the other controllers, which return their payload under a named key.",
+      "source_path": ".contracts/surface.schema.json",
+      "source_hash": "f8192ed3974ac75a982be3ed4b77595689d2e94cdd474aa51c4eff14f3be5ef8",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "builder",
+        "surfaces",
+        "surface",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 165,
+        "source_bytes": 1266
+      }
+    },
+    {
+      "id": "contract:.contracts/template.schema.json#whole",
+      "topic": "Template document",
+      "summary": "Schema for a Shopify OS 2.0-style template document containing ordered section instances. The order array must be a permutation of the sections keys; this runtime invariant is enforced by inc/Templates/TemplateSchema.php, not by this schema.",
+      "source_path": ".contracts/template.schema.json",
+      "source_hash": "d455e8aca1e5b603aee2fc9cd15f072d9e97cb250af2cfa0bedaf7e3cf219470",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "template",
+        "document",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 241,
+        "source_bytes": 2972
+      }
+    },
+    {
+      "id": "contract:.contracts/template.v2.schema.json#whole",
+      "topic": "Grid-First template document v2",
+      "summary": "Breaking schema-v2 Template -> Container -> Column -> Block document. Each order array must exactly permute its sibling map keys; that cross-field invariant is enforced by TemplateSchema v2 and the contract fixtures.",
+      "source_path": ".contracts/template.v2.schema.json",
+      "source_hash": "74ecad5b3d7e575ed3dd82ca9337002d3c3e51d00e04073b587f460fa0059085",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 3,
+      "keywords": [
+        "grid",
+        "first",
+        "template",
+        "document",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 216,
+        "source_bytes": 5853
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#architecture-ai-kit-agent-harness-v0-6",
+      "topic": "Architecture — AI-Kit Agent Harness v0.6",
+      "summary": "# Architecture — AI-Kit Agent Harness v0.6",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "421c628029e0c607f5525b0ac955e810b818aea44cbb3815a4c91fcc0bfee5e2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "agent",
+        "harness"
+      ],
+      "budget": {
+        "summary_chars": 42,
+        "source_bytes": 46
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#canonical-data",
+      "topic": "Canonical data",
+      "summary": "## Canonical data ```text .project/<feature>/state.json versioned current state .project/<feature>/events.jsonl append-only transition audit .project/<feature>/memory.jsonl durable context entries .project/<feature>/plan.md generated human view .project/<feature>/tasks.md generated human view workspace-tier harness lock ephemeral exclusive lock ``` `features/<feature>/` remains the intent source. ",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "4f8aa9f8776ea792cccf394275c84c2e6a69679e26aec390a37e1317065fb751",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "canonical",
+        "data",
+        "text",
+        "project",
+        "feature",
+        "state",
+        "json",
+        "versioned",
+        "current",
+        "events",
+        "jsonl",
+        "append"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 550
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#components",
+      "topic": "Components",
+      "summary": "## Components - `models.py`: state constructors and transition constants. - `store.py`: root-safe paths, atomic JSON, JSONL events, and locks. - `policy.py`: plan graph, scope, approval, retry, and completion validation. - `memory.py`: bounded retrieval, provenance hashes, and staleness. - `providers.py`: scripted, Codex CLI, and Claude CLI adapters. - `engine.py`: initialize, plan/replan, schedul",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "110d7f8139beb042ce8cbb384cfb6f7547bdae1b0ccb579f076376506bf7febd",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "components",
+        "models",
+        "state",
+        "constructors",
+        "transition",
+        "constants",
+        "store",
+        "root",
+        "safe",
+        "paths",
+        "atomic",
+        "json"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 558
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#control-loop",
+      "topic": "Control loop",
+      "summary": "## Control loop 1. Retrieve requirements and relevant memories with provenance. 2. Ask an LLM to propose or revise a structured plan. 3. Validate graph, scopes, risk, size, and acceptance criteria. 4. For large work, record explicit approval of the exact plan revision. 5. Persist state, append a sequenced event, and render Markdown. 6. Select one dependency-safe, approved task and build its contex",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "e2643f904677de05c67a72458c16af20c2750d50364464369763cffa4ae67325",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "control",
+        "loop",
+        "retrieve",
+        "requirements",
+        "relevant",
+        "memories",
+        "with",
+        "provenance",
+        "propose",
+        "revise",
+        "structured",
+        "plan"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 626
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#decisions",
+      "topic": "Decisions",
+      "summary": "## Decisions - Python 3.9 standard library, JSON state, and JSONL events give zero-bootstrap, diffable, auditable storage. - Deterministic lexical retrieval precedes optional future embeddings. - Provider routing is configuration, not hardcoded workflow logic.",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "860f332b68bc89c5d8d4077d5f32d65e5cdbfdad3ca22a0fd5f31d7b9f4a86d0",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "decisions",
+        "python",
+        "standard",
+        "library",
+        "json",
+        "state",
+        "jsonl",
+        "events",
+        "give",
+        "zero",
+        "bootstrap",
+        "diffable"
+      ],
+      "budget": {
+        "summary_chars": 260,
+        "source_bytes": 264
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#principle",
+      "topic": "Principle",
+      "summary": "## Principle The LLM is the reasoning plane, the harness is the control plane, and the memory store is the context plane. Models make planning and strategy judgments; deterministic code owns persistence, authorization, locking, and validation.",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "191ef82e89bb97812ec0680dfce0664b982c60e624f26c28e49d13712631428b",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "principle",
+        "reasoning",
+        "plane",
+        "harness",
+        "control",
+        "memory",
+        "store",
+        "context",
+        "models",
+        "make",
+        "planning",
+        "strategy"
+      ],
+      "budget": {
+        "summary_chars": 243,
+        "source_bytes": 246
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#safety-boundaries",
+      "topic": "Safety boundaries",
+      "summary": "## Safety boundaries - Validate feature IDs and derived paths before filesystem access. - Use subprocess argument arrays and stdin; never interpolate a shell command. - Implementation scopes cannot write intent, execution-state, ephemeral-workspace, or Git-control tiers; path escapes and symlink scopes are rejected. - Risk labels `database`, `destructive`, `production`, `credentials`, and `externa",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "49d9fdf1002b34442f772d017c186f3ed12139722b37c85d900711f96d6a07d2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "safety",
+        "boundaries",
+        "validate",
+        "feature",
+        "derived",
+        "paths",
+        "before",
+        "filesystem",
+        "access",
+        "subprocess",
+        "argument",
+        "arrays"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 756
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-agent-harness/architecture.md#state-and-provider-contracts",
+      "topic": "State and provider contracts",
+      "summary": "## State and provider contracts State contains schema version, event sequence, goal, lifecycle, plan revision, constraints, verification criteria, tasks, approvals, provider history, timestamps, and the last transition. Tasks contain IDs, dependencies, acceptance criteria, owner, file scope, risk labels, state, attempts, evidence, and review records. Every model call receives a role, bounded conte",
+      "source_path": ".project/ai-kit-agent-harness/architecture.md",
+      "source_hash": "a924d77fab37948010e678576b2ce10b6d20026e2ad8dd05a1d9fe426ed1f985",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "state",
+        "provider",
+        "contracts",
+        "contains",
+        "schema",
+        "version",
+        "event",
+        "sequence",
+        "goal",
+        "lifecycle",
+        "plan",
+        "revision"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 730
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-codex-claude/architecture.md#architecture-codex-claude-ai-kit-v0-5",
+      "topic": "Architecture — Codex–Claude AI-Kit v0.5",
+      "summary": "# Architecture — Codex–Claude AI-Kit v0.5",
+      "source_path": ".project/ai-kit-codex-claude/architecture.md",
+      "source_hash": "8e3f2e154b28786d5350f4d2c83688ff61c7953219c1c5fabc2c6e6f53b30593",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "codex",
+        "claude"
+      ],
+      "budget": {
+        "summary_chars": 41,
+        "source_bytes": 47
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-codex-claude/architecture.md#components",
+      "topic": "Components",
+      "summary": "## Components - `AGENTS.md`: lean, tool-neutral invariants loaded by Codex and imported by Claude. - `CLAUDE.md`: one-line Claude bootstrap importing `AGENTS.md`. - `.ai-kit/skills/`: canonical workflow skills; no tool-specific behavior in their bodies. - `.agents/skills/` and `.claude/skills/`: generated, byte-identical discovery projections. - `.ai-kit/modules/`: conditional reference material w",
+      "source_path": ".project/ai-kit-codex-claude/architecture.md",
+      "source_hash": "8e5834ba4592b8db9366be3359665634c00a825d2dcd25b18a8bc9e63db67bca",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "components",
+        "agents",
+        "lean",
+        "tool",
+        "neutral",
+        "invariants",
+        "loaded",
+        "codex",
+        "imported",
+        "claude",
+        "line",
+        "bootstrap"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 607
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-codex-claude/architecture.md#contracts",
+      "topic": "Contracts",
+      "summary": "## Contracts 1. Canonical skills are the only editable workflow source; projections must match byte-for-byte. 2. Always-on instructions contain invariants, not multi-step procedures. 3. Model routing is advisory until an external orchestrator consumes the configuration. 4. Documentation may claim mechanical enforcement only for files and checks that ship in the repository. 5. Task state remains hu",
+      "source_path": ".project/ai-kit-codex-claude/architecture.md",
+      "source_hash": "af4fb14fa82192af604f6e5571c71a28e218a11b07a1a469166d6618241252e3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "contracts",
+        "canonical",
+        "skills",
+        "only",
+        "editable",
+        "workflow",
+        "source",
+        "projections",
+        "must",
+        "match",
+        "byte",
+        "always"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 463
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-codex-claude/architecture.md#data-flow",
+      "topic": "Data flow",
+      "summary": "## Data flow User request → AGENTS/CLAUDE bootstrap → matching AI-Kit skill → routed role/modules → task state/scripts → tests and review.",
+      "source_path": ".project/ai-kit-codex-claude/architecture.md",
+      "source_hash": "42d5c8d61b3bb02b1233324c2189d43a6dd76811ac2a5f0854c9210c4261340b",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "data",
+        "flow",
+        "user",
+        "request",
+        "agents",
+        "claude",
+        "bootstrap",
+        "matching",
+        "skill",
+        "routed",
+        "role",
+        "modules"
+      ],
+      "budget": {
+        "summary_chars": 138,
+        "source_bytes": 151
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-codex-claude/architecture.md#risks-and-mitigations",
+      "topic": "Risks and mitigations",
+      "summary": "## Risks and mitigations - Tool discovery paths differ → generate projections from one canonical source and check them in CI. - Markdown state is regex-parsed → retain the constrained format and cover it with fixtures. - Cross-model review can add latency → require it for standard/large or high-risk work, not trivial changes. - Prompt rules are not hard enforcement → keep security/destructive boun",
+      "source_path": ".project/ai-kit-codex-claude/architecture.md",
+      "source_hash": "35917a6583957a52a344eb50c1aa6e23f1ca70bf63c343c5c4c0a42a6da266c8",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "risks",
+        "mitigations",
+        "tool",
+        "discovery",
+        "paths",
+        "differ",
+        "generate",
+        "projections",
+        "from",
+        "canonical",
+        "source",
+        "check"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 476
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-risk-remediation/architecture.md#architecture-ai-kit-risk-remediation",
+      "topic": "Architecture — ai-kit-risk-remediation",
+      "summary": "# Architecture — ai-kit-risk-remediation - JSON Schema remains the payload compatibility primitive and returns typed, path-scoped findings. - API and event adapters traverse operations/channels and delegate payload schemas to JSON Schema comparison. - Data and workflow adapters own their semantic metadata validation and comparison. - Project registry sources are restricted to `.contracts/` or the ",
+      "source_path": ".project/ai-kit-risk-remediation/architecture.md",
+      "source_hash": "bc124c59d02268ca1bcefd7bbff9e9017a07fa54c85115c2a2b5444321afa712",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "risk",
+        "remediation",
+        "json",
+        "schema",
+        "remains",
+        "payload",
+        "compatibility",
+        "primitive",
+        "returns",
+        "typed",
+        "path"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 841
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#architecture-canonical-state-convergence",
+      "topic": "Architecture — canonical-state-convergence",
+      "summary": "# Architecture — canonical-state-convergence",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "4d7e4a404ec52fe49385c21f6f04e4a06a8d2535adba83d9fbe81eb09b5319e7",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "canonical",
+        "state",
+        "convergence"
+      ],
+      "budget": {
+        "summary_chars": 44,
+        "source_bytes": 48
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#consumers-and-ownership",
+      "topic": "Consumers and ownership",
+      "summary": "## Consumers and ownership | Consumer | Classification | Target behavior | |---|---|---| | `dag.py` | migrate | consume normalized state; retain DAG/conflict rules | | `orchestrate.py` | migrate | canonical mutations remain harness-owned; legacy Markdown mutation is temporary compatibility | | `worker_manifest.py` | migrate | resolve declared scope through normalized tasks | | `consistency.py` | m",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "4913408914ad9823238039304d10392148140014497560796bf474ee83cd0698",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "consumers",
+        "ownership",
+        "consumer",
+        "classification",
+        "target",
+        "behavior",
+        "migrate",
+        "consume",
+        "normalized",
+        "state",
+        "retain",
+        "conflict"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 973
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#decision",
+      "topic": "Decision",
+      "summary": "## Decision `state.json` is the only mutable execution authority for a harness-managed feature. `tasks.md` is a deterministic projection when canonical state exists and a read-only compatibility source only when canonical state is absent.",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "7ccf977b3064f348199eaa382ab681cfc0eb27d65997b973a63c202da313afe9",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "decision",
+        "state",
+        "json",
+        "only",
+        "mutable",
+        "execution",
+        "authority",
+        "harness",
+        "managed",
+        "feature",
+        "tasks",
+        "deterministic"
+      ],
+      "budget": {
+        "summary_chars": 238,
+        "source_bytes": 241
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#failure-and-recovery",
+      "topic": "Failure and recovery",
+      "summary": "## Failure and recovery - Malformed canonical JSON, feature mismatch, duplicate task IDs, invalid dependency values, and path escape fail closed with stable diagnostics. - Missing/stale projection errors name the repair action. - Repair writes projections atomically without altering canonical state or the event sequence. - Legacy parse errors stay explicit; no heuristic recovery or implicit canoni",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "f8e09e7fa1edce34e64b76922495488ff38291eea5f9aa4a0ab6c837e6159e71",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "failure",
+        "recovery",
+        "malformed",
+        "canonical",
+        "json",
+        "feature",
+        "mismatch",
+        "duplicate",
+        "task",
+        "invalid",
+        "dependency",
+        "values"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 431
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#mutation-rules",
+      "topic": "Mutation rules",
+      "summary": "## Mutation rules - Harness/coordinator is the sole canonical state writer. - The resolver is read-only and never creates, repairs, or upgrades state. - Legacy Markdown transitions remain available only when `state.json` is absent. - A canonical feature with stale projection cannot be scheduled through legacy scripts; `harness repair` regenerates projections from unchanged state.",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "5ee790cb8adb3efcbe1b6531f010380d9a4509a759e5f05f17378c051a9499cf",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "mutation",
+        "rules",
+        "harness",
+        "coordinator",
+        "sole",
+        "canonical",
+        "state",
+        "writer",
+        "resolver",
+        "read",
+        "only",
+        "never"
+      ],
+      "budget": {
+        "summary_chars": 382,
+        "source_bytes": 387
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#normalized-model",
+      "topic": "Normalized model",
+      "summary": "## Normalized model Each task exposes `id`, `title`, `status`, `owner`, `scope`, `needs`, `files`, `attempts`, and `instance`. Canonical states map to `todo`, `in-progress`, and `done` for script compatibility while retaining `canonical_status`.",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "17e7467bc1520f940c1cc5db86502316979b41d938a3e0f376f2c4074195bf4b",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "normalized",
+        "model",
+        "each",
+        "task",
+        "exposes",
+        "title",
+        "status",
+        "owner",
+        "scope",
+        "needs",
+        "files",
+        "attempts"
+      ],
+      "budget": {
+        "summary_chars": 245,
+        "source_bytes": 248
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#resolution-boundary",
+      "topic": "Resolution boundary",
+      "summary": "## Resolution boundary `.ai-kit/scripts/task_state.py` owns feature/task state resolution for repository scripts. It exposes a Python API and a bounded JSON CLI. The result always includes `feature`, normalized `tasks`, `source` (`state.json` or `tasks.md`), `canonical`, `projection_matches`, and deterministic diagnostics. Resolution order: 1. Validate the feature identifier and contain all paths ",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "35a50831bf6a4ed2667d88e2662a749bbc87129e175957cef3f0e19bae4c4838",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "resolution",
+        "boundary",
+        "scripts",
+        "task",
+        "state",
+        "owns",
+        "feature",
+        "repository",
+        "exposes",
+        "python",
+        "bounded",
+        "json"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 939
+      }
+    },
+    {
+      "id": "architecture:.project/canonical-state-convergence/architecture.md#rollout-and-rollback",
+      "topic": "Rollout and rollback",
+      "summary": "## Rollout and rollback Consumers migrate behind source detection, preserving canonical and legacy readability. Rollback reverts consumer integrations; rollout never rewrites state data. Historical legacy features are not automatically migrated.",
+      "source_path": ".project/canonical-state-convergence/architecture.md",
+      "source_hash": "0d4cd750d59632fcf7f04ed6c8621e4d7fd855cd5927f34647984c5c722bdd09",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "rollout",
+        "rollback",
+        "consumers",
+        "migrate",
+        "behind",
+        "source",
+        "detection",
+        "preserving",
+        "canonical",
+        "legacy",
+        "readability",
+        "reverts"
+      ],
+      "budget": {
+        "summary_chars": 245,
+        "source_bytes": 247
+      }
+    },
+    {
+      "id": "architecture:.project/contract-compatibility/architecture.md#architecture-contract-compatibility",
+      "topic": "Architecture — contract-compatibility",
+      "summary": "# Architecture — contract-compatibility The compatibility layer is a read-only analyzer in `.ai-kit/harness/compatibility.py`. It compares an approved previous JSON Schema with a proposed schema and emits classification plus path-scoped findings. It is schema-level evidence only; runtime invariants and explicit contract approval remain authoritative. For a provider/consumer contract, preserving ol",
+      "source_path": ".project/contract-compatibility/architecture.md",
+      "source_hash": "ad172f02fec3eeb944e2291cd5ea05424f88ef385227d93e59322de4dbcfff04",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "contract",
+        "compatibility",
+        "layer",
+        "read",
+        "only",
+        "analyzer",
+        "harness",
+        "compares",
+        "approved",
+        "previous",
+        "json"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 731
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#alternatives-considered",
+      "topic": "Alternatives considered",
+      "summary": "## Alternatives considered - Copy directory to a temp folder: rejected because it loses Git object identity, binary diff fidelity, ignore semantics, and safe base-drift checks. - Provider-native sandbox only: rejected as the sole boundary because adapters differ and post-process side effects cannot be promoted transactionally. - Branch + commit per task: rejected because the harness is not authori",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "e5590530a2d59857c216f45fa6c8e51891c06a47da2cfa698d2b226729a00395",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "alternatives",
+        "considered",
+        "copy",
+        "directory",
+        "temp",
+        "folder",
+        "rejected",
+        "because",
+        "loses",
+        "object",
+        "identity",
+        "binary"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 575
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#architecture-controlled-orchestrator-v2",
+      "topic": "Architecture — controlled-orchestrator-v2",
+      "summary": "# Architecture — controlled-orchestrator-v2 status: approved-for-implementation updated: 2026-08-22",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "ac52c9dcb1fce711a14b59522e35c1498fd8506e86cacac875ff96ba8ce3130c",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "controlled",
+        "orchestrator",
+        "status",
+        "approved",
+        "implementation",
+        "updated",
+        "2026"
+      ],
+      "budget": {
+        "summary_chars": 99,
+        "source_bytes": 104
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#components-and-ownership",
+      "topic": "Components and ownership",
+      "summary": "## Components and ownership",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "bf73c63c1e026b4646eb2784cfce5e4828e5914305c54b244824eb9833b61311",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "components",
+        "ownership"
+      ],
+      "budget": {
+        "summary_chars": 27,
+        "source_bytes": 29
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#context",
+      "topic": "Context",
+      "summary": "## Context The v0.13 engine invokes an implementation provider in the main repository and detects scope violations after the process returns. It can restore harness control files, but an out-of-scope application mutation remains in the user's tree. v0.14 moves the mutation boundary into a disposable Git worktree and makes promotion a separate, post-review control-plane transition.",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "76e2dcaf0d93b5bd18033e3cd6fc19bf45b760947e94e6f1d8ed98132a5dd85e",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "context",
+        "engine",
+        "invokes",
+        "implementation",
+        "provider",
+        "main",
+        "repository",
+        "detects",
+        "scope",
+        "violations",
+        "after",
+        "process"
+      ],
+      "budget": {
+        "summary_chars": 383,
+        "source_bytes": 386
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#failure-modes",
+      "topic": "Failure modes",
+      "summary": "## Failure modes - No baseline commit or dirty main tree: block before provider call with setup guidance; do not create a commit. - Provider/scope/verification failure: main remains unchanged; record failure and discard only the owned worktree. - Review revise/block: never promote; retain finding evidence and discard owned workspace when the task returns to retry/escalated state. - Main drift befo",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "c60915f902c221a2fa5b64a1cf12fe56dd3188d6180b39c030531d423668548f",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "failure",
+        "modes",
+        "baseline",
+        "commit",
+        "dirty",
+        "main",
+        "tree",
+        "block",
+        "before",
+        "provider",
+        "call",
+        "with"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 896
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#gitworkspacemanager-ai-harness-worktrees-py",
+      "topic": "`GitWorkspaceManager` — `.ai-kit/harness/worktrees.py`",
+      "summary": "### `GitWorkspaceManager` — `.ai-kit/harness/worktrees.py` Owns Git discovery, baseline validation, worktree creation, patch capture, promotion preflight/application, and cleanup. It accepts only an AI-Kit root and explicit feature/task/run identifiers. It never plans tasks, invokes models, changes canonical state, stages the main index, commits, pushes, or merges.",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "4251ab4c99abeca809539aa8c2abe6ce400567d5d215b5bcf0b67eb7b6b83373",
+      "status": "stale",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "gitworkspacemanager",
+        "harness",
+        "worktrees",
+        "owns",
+        "discovery",
+        "baseline",
+        "validation",
+        "worktree",
+        "creation",
+        "patch",
+        "capture",
+        "promotion"
+      ],
+      "budget": {
+        "summary_chars": 363,
+        "source_bytes": 368
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#gitworkspacemanager-ai-kit-harness-worktrees-py",
+      "topic": "`GitWorkspaceManager` — `.ai-kit/harness/worktrees.py`",
+      "summary": "### `GitWorkspaceManager` — `.ai-kit/harness/worktrees.py` Owns Git discovery, baseline validation, worktree creation, patch capture, promotion preflight/application, and cleanup. It accepts only an AI-Kit root and explicit feature/task/run identifiers. It never plans tasks, invokes models, changes canonical state, stages the main index, commits, pushes, or merges.",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "370fe0d88cce1d221715e55ac2a177fd2d085aa90dfd50fceb3deda47da93ef5",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "gitworkspacemanager",
+        "harness",
+        "worktrees",
+        "owns",
+        "discovery",
+        "baseline",
+        "validation",
+        "worktree",
+        "creation",
+        "patch",
+        "capture",
+        "promotion"
+      ],
+      "budget": {
+        "summary_chars": 367,
+        "source_bytes": 372
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#non-functional-requirements",
+      "topic": "Non-functional requirements",
+      "summary": "## Non-functional requirements - Python 3.9 standard library only; Git CLI is the optional runtime dependency. - All subprocess calls use argument vectors, `shell=False`, bounded output, and repository/workspace-specific cwd. - Deterministic errors are testable without Codex or Claude. - No secrets, patch bytes, or raw provider/verifier output enter canonical state.",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "033a1da5a56cf900964448fec9b5b932a29888bf9929dfe9c6aca4101f23c3cc",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "functional",
+        "requirements",
+        "python",
+        "standard",
+        "library",
+        "only",
+        "optional",
+        "runtime",
+        "dependency",
+        "subprocess",
+        "calls",
+        "argument"
+      ],
+      "budget": {
+        "summary_chars": 368,
+        "source_bytes": 373
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#orchestration-lifecycle-ai-harness-engine-py",
+      "topic": "Orchestration lifecycle — `.ai-kit/harness/engine.py`",
+      "summary": "### Orchestration lifecycle — `.ai-kit/harness/engine.py` The engine owns when a workspace exists and which transition may promote it: ```text ready → create detached worktree at main HEAD → provider implementation in worktree → independent verification in worktree → capture/stage only disposable index and hash binary patch → review isolated worktree + patch metadata → approve: verify main HEAD/tree, ",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "3956af08cc6f59dde7bc5d86648d69d2c54e94358f7ddcf04eeb85682af5a00f",
+      "status": "stale",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "orchestration",
+        "lifecycle",
+        "harness",
+        "engine",
+        "owns",
+        "when",
+        "workspace",
+        "exists",
+        "which",
+        "transition",
+        "promote",
+        "text"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 808
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#orchestration-lifecycle-ai-kit-harness-engine-py",
+      "topic": "Orchestration lifecycle — `.ai-kit/harness/engine.py`",
+      "summary": "### Orchestration lifecycle — `.ai-kit/harness/engine.py` The engine owns when a workspace exists and which transition may promote it: ```text ready → create detached worktree at main HEAD → provider implementation in worktree → independent verification in worktree → capture/stage only disposable index and hash binary patch → review isolated worktree + patch metadata → approve: verify main HEAD/tr",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "eb36bb931efd4e4a583138b81c968469790d249f48b3c66df88d76c3335d6b9d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "orchestration",
+        "lifecycle",
+        "harness",
+        "engine",
+        "owns",
+        "when",
+        "workspace",
+        "exists",
+        "which",
+        "transition",
+        "promote",
+        "text"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 812
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#provider-request-working-directory-ai-harness-providers-py",
+      "topic": "Provider request working directory — `.ai-kit/harness/providers.py`",
+      "summary": "### Provider request working directory — `.ai-kit/harness/providers.py` `ProviderRequest.working_directory` is an optional internal execution boundary. Subprocess adapters validate it as a real, non-symlinked directory before spawn. Codex uses it for both process cwd and `--cd`; Claude uses it for cwd. Omission retains the provider's configured repository root for planning and compatibility.",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "5b72838be872401a6fb48c1351bd55680bf3b19b3d2865d4608a21d5e388ff84",
+      "status": "stale",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "provider",
+        "request",
+        "working",
+        "directory",
+        "harness",
+        "providers",
+        "providerrequest",
+        "optional",
+        "internal",
+        "execution",
+        "boundary",
+        "subprocess"
+      ],
+      "budget": {
+        "summary_chars": 390,
+        "source_bytes": 395
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#provider-request-working-directory-ai-kit-harness-providers-py",
+      "topic": "Provider request working directory — `.ai-kit/harness/providers.py`",
+      "summary": "### Provider request working directory — `.ai-kit/harness/providers.py` `ProviderRequest.working_directory` is an optional internal execution boundary. Subprocess adapters validate it as a real, non-symlinked directory before spawn. Codex uses it for both process cwd and `--cd`; Claude uses it for cwd. Omission retains the provider's configured repository root for planning and compatibility.",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "c3e153ca33f312f1b59ab8ceb7b1f6cf03464b4936e732f552e0de73c77b53bd",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "provider",
+        "request",
+        "working",
+        "directory",
+        "harness",
+        "providers",
+        "providerrequest",
+        "optional",
+        "internal",
+        "execution",
+        "boundary",
+        "subprocess"
+      ],
+      "budget": {
+        "summary_chars": 394,
+        "source_bytes": 399
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#rollout-and-rollback",
+      "topic": "Rollout and rollback",
+      "summary": "## Rollout and rollback Ship isolation behind validated CLI configuration, with direct engine tests able to opt out for legacy fixtures. The CLI's implementation route requires isolation. Rollback disables the route and restores v0.13 engine/provider files; owned worktrees remain inspectable and can be removed by the bounded cleanup command. No application data migration exists.",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "8dc59e01890642177b4a5450a2bb09dfdde673cda7b67450f6d5e4a57ced16f7",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "rollout",
+        "rollback",
+        "ship",
+        "isolation",
+        "behind",
+        "validated",
+        "configuration",
+        "with",
+        "direct",
+        "engine",
+        "tests",
+        "able"
+      ],
+      "budget": {
+        "summary_chars": 381,
+        "source_bytes": 383
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#state-and-recovery",
+      "topic": "State and recovery",
+      "summary": "## State and recovery Workspace phases are `created`, `implemented`, `verified`, `review`, `promoted`, `discarded`, and `failed`. A process restart loads the stored metadata, verifies the marker/base/path, and can resume review. A new implementation retry first validates and discards the prior owned workspace; an unknown or tampered path blocks and requires operator inspection. Cleanup of a review",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "24d2096e783e53519e84de53d7cd8e251b872aead44b4d7c0701d664c6a7aacd",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "state",
+        "recovery",
+        "workspace",
+        "phases",
+        "created",
+        "implemented",
+        "verified",
+        "review",
+        "promoted",
+        "discarded",
+        "failed",
+        "process"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 492
+      }
+    },
+    {
+      "id": "architecture:.project/controlled-orchestrator-v2/architecture.md#trust-boundaries-and-invariants",
+      "topic": "Trust boundaries and invariants",
+      "summary": "## Trust boundaries and invariants 1. Repository root must be exactly the Git top-level and contain AI-Kit. 2. Creation requires Git, a resolvable `HEAD`, and an empty main porcelain status. 3. Worktree parent is a deterministic sibling control root, never inside the main worktree, `.git`, `$HOME`, or a caller-provided arbitrary directory. 4. Each workspace has an ownership marker containing repos",
+      "source_path": ".project/controlled-orchestrator-v2/architecture.md",
+      "source_hash": "a96202685cc013b788538d75a5ab99415b01420743c6cc1bab786e1e8c6f647f",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "trust",
+        "boundaries",
+        "invariants",
+        "repository",
+        "root",
+        "must",
+        "exactly",
+        "level",
+        "contain",
+        "creation",
+        "requires",
+        "resolvable"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1310
+      }
+    },
+    {
+      "id": "architecture:.project/llm-driven-capability-selection/architecture.md#architecture-llm-driven-capability-selection",
+      "topic": "Architecture — llm-driven-capability-selection",
+      "summary": "# Architecture — llm-driven-capability-selection AI-Kit keeps one runtime and no user-facing project profiles. The IDE LLM proposes a minimum capability set from repository/task signals. A deterministic resolver validates the proposal, applies safety floors, records provenance, and returns the effective configuration. ```text repository + task signals → IDE LLM proposal → deterministic resolver → ",
+      "source_path": ".project/llm-driven-capability-selection/architecture.md",
+      "source_hash": "57d772786be746a9bed7d97e5c40eefc8fe7a9697b2de63d1454ecae7741aff1",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "driven",
+        "capability",
+        "selection",
+        "keeps",
+        "runtime",
+        "user",
+        "facing",
+        "project",
+        "profiles",
+        "proposes",
+        "minimum"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 965
+      }
+    },
+    {
+      "id": "architecture:.project/llm-driven-capability-selection/architecture.md#capability-decision-matrix",
+      "topic": "Capability decision matrix",
+      "summary": "## Capability decision matrix | Capability | Repository/task evidence | Plan-implied activation | Must not activate from | |---|---|---|---| | `service_ownership` | multiple deployable service roots or declared service registry | non-empty `services`; dependency of contract/data/release controls | multiple library packages alone | | `contract_graph` | `.contracts/registry.json`, OpenAPI, or AsyncA",
+      "source_path": ".project/llm-driven-capability-selection/architecture.md",
+      "source_hash": "9ac9a690170bc15a45263956e25d85b9f36858a49c236ff7700e2ed5ffccd379",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "capability",
+        "decision",
+        "matrix",
+        "repository",
+        "task",
+        "evidence",
+        "plan",
+        "implied",
+        "activation",
+        "must",
+        "activate",
+        "from"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1517
+      }
+    },
+    {
+      "id": "architecture:.project/multi-service-contracts/architecture.md#architecture-multi-service-contracts",
+      "topic": "Architecture — multi-service-contracts",
+      "summary": "# Architecture — multi-service-contracts",
+      "source_path": ".project/multi-service-contracts/architecture.md",
+      "source_hash": "4aa4e1da7e3c54d32408e6795d6bed452973c80e8079fb63404e84ee7d8e5732",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "multi",
+        "service",
+        "contracts"
+      ],
+      "budget": {
+        "summary_chars": 40,
+        "source_bytes": 44
+      }
+    },
+    {
+      "id": "architecture:.project/multi-service-contracts/architecture.md#boundary",
+      "topic": "Boundary",
+      "summary": "## Boundary The LLM remains the reasoning plane. It proposes a plan containing services, versioned contracts, and bounded tasks. The harness remains the control plane and owns schema validation, normalization, approval, source hashing, scheduling, evidence, and state transitions.",
+      "source_path": ".project/multi-service-contracts/architecture.md",
+      "source_hash": "1b35f233498216f78082ee902fc0f1fea05d4142bec8e61fca637e34dd19a3df",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "boundary",
+        "remains",
+        "reasoning",
+        "plane",
+        "proposes",
+        "plan",
+        "containing",
+        "services",
+        "versioned",
+        "contracts",
+        "bounded",
+        "tasks"
+      ],
+      "budget": {
+        "summary_chars": 280,
+        "source_bytes": 283
+      }
+    },
+    {
+      "id": "architecture:.project/multi-service-contracts/architecture.md#canonical-graph",
+      "topic": "Canonical graph",
+      "summary": "## Canonical graph `state.json` gains optional hierarchy metadata plus normalized `services`, `contracts`, and `contract_approvals`. A contract reference is always `<id>@<version>`. Contract sources are repository-relative and carry either `pending` or a SHA-256 digest. Services declare domain, owned paths, owned data, exposed/consumed contracts, allowed dependencies, and forbidden dependencies. C",
+      "source_path": ".project/multi-service-contracts/architecture.md",
+      "source_hash": "42e68e05c122c25bbe370207f5425821fe135b872f0a2c01c9582aa5c6f8090f",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "canonical",
+        "graph",
+        "state",
+        "json",
+        "gains",
+        "optional",
+        "hierarchy",
+        "metadata",
+        "plus",
+        "normalized",
+        "services",
+        "contracts"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 790
+      }
+    },
+    {
+      "id": "architecture:.project/multi-service-contracts/architecture.md#compatibility",
+      "topic": "Compatibility",
+      "summary": "## Compatibility Plans without `services` and `contracts` follow v0.6 behavior. New task fields are optional in the provider schema and normalize to empty values. Existing v1 canonical state remains readable; new state fields default safely rather than forcing migration of completed features.",
+      "source_path": ".project/multi-service-contracts/architecture.md",
+      "source_hash": "da92682a26dc0e88354c891bccef098c4687a71ab15663553ff19b31443c3665",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "compatibility",
+        "plans",
+        "without",
+        "services",
+        "contracts",
+        "follow",
+        "behavior",
+        "task",
+        "fields",
+        "optional",
+        "provider",
+        "schema"
+      ],
+      "budget": {
+        "summary_chars": 293,
+        "source_bytes": 296
+      }
+    },
+    {
+      "id": "architecture:.project/multi-service-contracts/architecture.md#deterministic-gates",
+      "topic": "Deterministic gates",
+      "summary": "## Deterministic gates 1. Registry validation rejects duplicate/unknown services and contracts, illegal dependencies, missing owners, invalid producer/consumer declarations, and data ownership conflicts. 2. Contract-writing tasks are Architect-owned, include the contract source in file scope, declare `public-contract`, and are the sole writer for that contract. 3. Readers of a contract written in ",
+      "source_path": ".project/multi-service-contracts/architecture.md",
+      "source_hash": "6859022b7f41401f00b2b40fba6d5d244b0fabd27bde2079920f02ff6bc58312",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "deterministic",
+        "gates",
+        "registry",
+        "validation",
+        "rejects",
+        "duplicate",
+        "unknown",
+        "services",
+        "contracts",
+        "illegal",
+        "dependencies",
+        "missing"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1093
+      }
+    },
+    {
+      "id": "architecture:.project/multi-service-contracts/architecture.md#failure-behavior",
+      "topic": "Failure behavior",
+      "summary": "## Failure behavior - Draft contract: typed approval block with the contract references. - Missing or hash-mismatched contract source: fail closed with `needs_replan` guidance. - Contract graph changed by a replan: unfinished approvals are cleared; completed task contracts cannot be rewritten. - Contract writer failure: contract remains draft and consumers remain blocked.",
+      "source_path": ".project/multi-service-contracts/architecture.md",
+      "source_hash": "d6973854fe62478b738142d8e4edf336471786708eec0bd8cb5cc908502bf901",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "failure",
+        "behavior",
+        "draft",
+        "contract",
+        "typed",
+        "approval",
+        "block",
+        "with",
+        "references",
+        "missing",
+        "hash",
+        "mismatched"
+      ],
+      "budget": {
+        "summary_chars": 374,
+        "source_bytes": 376
+      }
+    },
+    {
+      "id": "architecture:.project/multi-service-contracts/architecture.md#hierarchy",
+      "topic": "Hierarchy",
+      "summary": "## Hierarchy Optional `program_id`, `workstream_id`, and `parent_feature` metadata identify a bounded plan inside a larger program. The 24-task limit remains per workstream, preventing a single context-heavy mega-plan.",
+      "source_path": ".project/multi-service-contracts/architecture.md",
+      "source_hash": "f595cdae0590de2bd4e79d075958daa15a74515ef7344b23b5873cf19d9ef455",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "hierarchy",
+        "optional",
+        "program",
+        "workstream",
+        "parent",
+        "feature",
+        "metadata",
+        "identify",
+        "bounded",
+        "plan",
+        "inside",
+        "larger"
+      ],
+      "budget": {
+        "summary_chars": 218,
+        "source_bytes": 221
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#alternatives-considered",
+      "topic": "Alternatives considered",
+      "summary": "## Alternatives considered - Root-level installer outside `.ai-kit`: rejected because it is absent when only the portable kit directory is copied. - Download/curl bootstrap: rejected because it adds network and supply-chain state. - Overwrite or `--force`: rejected because bootstrap convenience cannot authorize destroying project-owned instructions, hooks, or CI configuration. - Automatically comm",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "08f9a0aa5a297b006e0906ad72dd4a87f0ca43f897d0eae47aab84bfdccec550",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "alternatives",
+        "considered",
+        "root",
+        "level",
+        "installer",
+        "outside",
+        "rejected",
+        "because",
+        "absent",
+        "when",
+        "only",
+        "portable"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 659
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#architecture-portable-installer",
+      "topic": "Architecture — portable-installer",
+      "summary": "# Architecture — portable-installer status: approved-for-implementation updated: 2026-08-22",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "7db29cfdb4cb47c081caa1ba766753f26de9c85e1cea3337d9883be04403def6",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "portable",
+        "installer",
+        "status",
+        "approved",
+        "implementation",
+        "updated",
+        "2026"
+      ],
+      "budget": {
+        "summary_chars": 91,
+        "source_bytes": 96
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#components-and-ownership",
+      "topic": "Components and ownership",
+      "summary": "## Components and ownership",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "bf73c63c1e026b4646eb2784cfce5e4828e5914305c54b244824eb9833b61311",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "components",
+        "ownership"
+      ],
+      "budget": {
+        "summary_chars": 27,
+        "source_bytes": 29
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#context",
+      "topic": "Context",
+      "summary": "## Context AI-Kit is currently usable in this repository but its required root files live outside `.ai-kit/`. Copying only `.ai-kit/` to a new project therefore omits agent entry rules, Claude routing, Git ignore policy, local QA hooks, CI gates, project state, and generated skill discovery paths. The bootstrap must be portable while keeping all mutation deterministic, local, inspectable, and inde",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "7f1a19118fc339e6205173ce727ac3e2b0b9c88b53562c1afcf0cd89e20fd38a",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "context",
+        "currently",
+        "usable",
+        "this",
+        "repository",
+        "required",
+        "root",
+        "files",
+        "live",
+        "outside",
+        "copying",
+        "only"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 425
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#existing-deterministic-helpers",
+      "topic": "Existing deterministic helpers",
+      "summary": "### Existing deterministic helpers `.ai-kit/scripts/sync-skills.sh` remains the only writer of `.agents/skills` and `.claude/skills`. `.ai-kit/scripts/git-qa.sh setup --init` remains the only Git setup path and enforces exact repository root plus repository-local hooks. The installer orchestrates these helpers but does not duplicate their policy.",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "3446da92ec4fb76413878069c6a6553b4a897b6bf039ee2fc648f81178a36cc3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "existing",
+        "deterministic",
+        "helpers",
+        "scripts",
+        "sync",
+        "skills",
+        "remains",
+        "only",
+        "writer",
+        "agents",
+        "claude",
+        "setup"
+      ],
+      "budget": {
+        "summary_chars": 348,
+        "source_bytes": 351
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#failure-modes-and-recovery",
+      "topic": "Failure modes and recovery",
+      "summary": "## Failure modes and recovery - Invalid copy layout or missing canonical kit asset: stop before writes. - Managed-file conflict or symlink: list the destination and stop before writes; preserve both the existing project content and every still-missing asset. - Failure after apply (disk interruption, sync, Git, or validation): already copied deterministic files remain; correct the reported cause an",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "09e0752bcdf1851209b80ed28886053b8341c9af13ba3f4fcb41dd2fc74e03c2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "failure",
+        "modes",
+        "recovery",
+        "invalid",
+        "copy",
+        "layout",
+        "missing",
+        "canonical",
+        "asset",
+        "stop",
+        "before",
+        "writes"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 878
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#install-lifecycle",
+      "topic": "Install lifecycle",
+      "summary": "## Install lifecycle ```text resolve script → require <root>/.ai-kit/ai.yaml → parse flags → preflight templates, destinations, symlinks, and ignore file → --check: validate projections/Git state and exit without writes → create features/.project/.workspace and root integration parents → copy missing managed templates + merge missing ignore entries → synchronize Codex/Claude skill projections → Gi",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "cc8d47cdb041466ba0d345398019ee76becbe9f34f89256770e5aab09bb614ab",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "install",
+        "lifecycle",
+        "text",
+        "resolve",
+        "script",
+        "require",
+        "root",
+        "yaml",
+        "parse",
+        "flags",
+        "preflight",
+        "templates"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 549
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#installer-ai-install-install-sh",
+      "topic": "Installer — `.ai-kit/install/install.sh`",
+      "summary": "### Installer — `.ai-kit/install/install.sh` Owns root discovery, prerequisite checks, managed-file preflight, missing directory creation, template installation, required `.gitignore` entry merging, canonical skill synchronization, optional Git QA setup, and post-install verification. It accepts `--check` for read-only readiness validation and `--no-git` to suppress all Git mutation. It never edits `.",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "54c8a518cc6324619acf7242611aba4be6c66a9b1e324a77adaff9a3a5ab9790",
+      "status": "stale",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "installer",
+        "install",
+        "owns",
+        "root",
+        "discovery",
+        "prerequisite",
+        "checks",
+        "managed",
+        "file",
+        "preflight",
+        "missing",
+        "directory"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 498
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#installer-ai-kit-install-install-sh",
+      "topic": "Installer — `.ai-kit/install/install.sh`",
+      "summary": "### Installer — `.ai-kit/install/install.sh` Owns root discovery, prerequisite checks, managed-file preflight, missing directory creation, template installation, required `.gitignore` entry merging, canonical skill synchronization, optional Git QA setup, and post-install verification. It accepts `--check` for read-only readiness validation and `--no-git` to suppress all Git mutation. It never edit",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "9b3f4876a8c78f3d023784f2abb8df8474f5e3b4c816dbf9fc4b44d8d7e2f9fc",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "installer",
+        "install",
+        "owns",
+        "root",
+        "discovery",
+        "prerequisite",
+        "checks",
+        "managed",
+        "file",
+        "preflight",
+        "missing",
+        "directory"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 506
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#mutation-and-safety-invariants",
+      "topic": "Mutation and safety invariants",
+      "summary": "## Mutation and safety invariants 1. Project root is exactly two directories above the physical installer path and must contain `.ai-kit/ai.yaml`; no caller-provided root or broad path is accepted. 2. Every managed destination is checked before the first write. An existing regular file is accepted only when byte-identical to the shipped template. 3. Existing destination symlinks and differing mana",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "e55cf08b041ed195184cad4a43f759cd2583664475d5afddf52b8ecbbe031648",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "mutation",
+        "safety",
+        "invariants",
+        "project",
+        "root",
+        "exactly",
+        "directories",
+        "above",
+        "physical",
+        "installer",
+        "path",
+        "must"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1505
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#non-functional-requirements",
+      "topic": "Non-functional requirements",
+      "summary": "## Non-functional requirements - Bash with standard POSIX utilities already used by AI-Kit; no network access. - Paths are quoted, resolved physically, and tested with spaces. - Tests use disposable directories and restore/compare global Git hook settings. - Static validation checks shell syntax, executable bits, manifest integrity, and root/template parity for the shared integration assets.",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "e336c18693dedfa05cd4f82b435665195814e116a104a54cdda48847ddfd1b73",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "functional",
+        "requirements",
+        "bash",
+        "with",
+        "standard",
+        "posix",
+        "utilities",
+        "already",
+        "used",
+        "network",
+        "access",
+        "paths"
+      ],
+      "budget": {
+        "summary_chars": 394,
+        "source_bytes": 399
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#rollout-and-rollback",
+      "topic": "Rollout and rollback",
+      "summary": "## Rollout and rollback Ship as additive `.ai-kit/install` content plus validation and test integration. Existing projects are unchanged until the installer is explicitly run. Rollback removes the installer assets and their test/validation hooks; installed projects retain plain files that can be reviewed or reverted normally. No data migration exists.",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "6d7dd8e8d802cf3f0bc62f1829439757af4999f186a4e6f7e3aa247d5b7d789d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "rollout",
+        "rollback",
+        "ship",
+        "additive",
+        "install",
+        "content",
+        "plus",
+        "validation",
+        "test",
+        "integration",
+        "existing",
+        "projects"
+      ],
+      "budget": {
+        "summary_chars": 353,
+        "source_bytes": 355
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#templates-ai-install-templates",
+      "topic": "Templates — `.ai-kit/install/templates/`",
+      "summary": "### Templates — `.ai-kit/install/templates/` Own byte-for-byte bootstrap versions of `AGENTS.md`, `CLAUDE.md`, the pre-commit hook, GitHub gates workflow, and initial `.project/INDEX.md`. A manifest maps each source to one project-root destination and records which executable bit is needed. The current kit's root integration files are validation fixtures for template parity, except `.project/INDEX.md`",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "0966db02c5ab8248e446bfb8e99779ddf219b0816a2d193de32351914b1cb8f8",
+      "status": "stale",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "templates",
+        "install",
+        "byte",
+        "bootstrap",
+        "versions",
+        "agents",
+        "claude",
+        "commit",
+        "hook",
+        "github",
+        "gates",
+        "workflow"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 502
+      }
+    },
+    {
+      "id": "architecture:.project/portable-installer/architecture.md#templates-ai-kit-install-templates",
+      "topic": "Templates — `.ai-kit/install/templates/`",
+      "summary": "### Templates — `.ai-kit/install/templates/` Own byte-for-byte bootstrap versions of `AGENTS.md`, `CLAUDE.md`, the pre-commit hook, GitHub gates workflow, and initial `.project/INDEX.md`. A manifest maps each source to one project-root destination and records which executable bit is needed. The current kit's root integration files are validation fixtures for template parity, except `.project/INDEX",
+      "source_path": ".project/portable-installer/architecture.md",
+      "source_hash": "9e6250cba042c7f6b54435084d543147f6ed9b8a124a61bf7090ec6c70be19c4",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "templates",
+        "install",
+        "byte",
+        "bootstrap",
+        "versions",
+        "agents",
+        "claude",
+        "commit",
+        "hook",
+        "github",
+        "gates",
+        "workflow"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 506
+      }
+    },
+    {
+      "id": "architecture:.project/project-contract-types/architecture.md#adapter-boundary",
+      "topic": "Adapter boundary",
+      "summary": "## Adapter boundary ```text .contracts source ↓ kind adapter (format + semantic validation) ↓ normalized contract + compatibility findings ↓ AI-Kit policy (ownership, approval, dependencies, data safety) ↓ QA/release evidence ``` Adapters return deterministic classifications (`unchanged`, `additive`, `backward`, `forward`, `full`, `breaking`, or `unsupported`) and path-scoped findings. Unsupported",
+      "source_path": ".project/project-contract-types/architecture.md",
+      "source_hash": "70f3903ebe24a2eff352ca68f808bd7e27a02a2549fcd1ed0ed150b305d60049",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "adapter",
+        "boundary",
+        "text",
+        "contracts",
+        "source",
+        "kind",
+        "format",
+        "semantic",
+        "validation",
+        "normalized",
+        "contract",
+        "compatibility"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 583
+      }
+    },
+    {
+      "id": "architecture:.project/project-contract-types/architecture.md#architecture-project-contract-types",
+      "topic": "Architecture — project-contract-types",
+      "summary": "# Architecture — project-contract-types",
+      "source_path": ".project/project-contract-types/architecture.md",
+      "source_hash": "c1b7c301844a76f3ad2f9b6b4a3273d9d9fa24e4f1bc78a7bb5c6ea8f6bb1ee6",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "project",
+        "contract",
+        "types"
+      ],
+      "budget": {
+        "summary_chars": 39,
+        "source_bytes": 43
+      }
+    },
+    {
+      "id": "architecture:.project/project-contract-types/architecture.md#boundaries",
+      "topic": "Boundaries",
+      "summary": "## Boundaries - `.ai-kit/contracts/` contains only versioned AI-Kit runtime protocol contracts. - `.contracts/` is the project-owned public contract registry and source tree. - `.project/<feature>/state.json` stores execution/approval snapshots; it is never a product contract source. - Project contract adapters are read-only and never execute deployment, database migration, network access, or sour",
+      "source_path": ".project/project-contract-types/architecture.md",
+      "source_hash": "71b3e4bd5438114b39d2aabc3c016fc0db3201a03b16d0288f2ddc66e5c18b08",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "boundaries",
+        "contracts",
+        "contains",
+        "only",
+        "versioned",
+        "runtime",
+        "protocol",
+        "project",
+        "owned",
+        "public",
+        "contract",
+        "registry"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 419
+      }
+    },
+    {
+      "id": "architecture:.project/project-contract-types/architecture.md#kind-responsibilities",
+      "topic": "Kind responsibilities",
+      "summary": "## Kind responsibilities - JSON Schema: properties, required, types, enums, arrays, refs, and evolution. - OpenAPI: operations, request/response schemas, errors, auth, idempotency, and deprecation. - AsyncAPI/CloudEvents: channels/messages, envelope fields, keys, ordering, delivery, replay, duplicate handling, and DLQ. - Data: single writer, entities, integrity, expand/backfill/switch/contract, re",
+      "source_path": ".project/project-contract-types/architecture.md",
+      "source_hash": "65f93dc4044fb7832937f0d19aa5b65263b6b0f93be8d540a4f552b35975c2e0",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "kind",
+        "responsibilities",
+        "json",
+        "schema",
+        "properties",
+        "required",
+        "types",
+        "enums",
+        "arrays",
+        "refs",
+        "evolution",
+        "openapi"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 622
+      }
+    },
+    {
+      "id": "architecture:.project/project-contract-types/architecture.md#registry-and-normalized-model",
+      "topic": "Registry and normalized model",
+      "summary": "## Registry and normalized model The registry loader resolves project references as `<id>@<semver>` and records kind, owner, producers, consumers, source, source hash, compatibility, change type, invariants, verification, rollout, and rollback. It accepts only `schema`, `api`, `event`, `data`, and `workflow` kinds. Each service has one owner identity, owned paths/data, exposed/consumed references,",
+      "source_path": ".project/project-contract-types/architecture.md",
+      "source_hash": "55d12b70065894af36cd7d278186e21710f5ef97131c7e9d377f59f0b8313099",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "registry",
+        "normalized",
+        "model",
+        "loader",
+        "resolves",
+        "project",
+        "references",
+        "semver",
+        "records",
+        "kind",
+        "owner",
+        "producers"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 690
+      }
+    },
+    {
+      "id": "architecture:.project/project-contract-types/architecture.md#rollout-and-rollback",
+      "topic": "Rollout and rollback",
+      "summary": "## Rollout and rollback First validate existing registries without changing behavior, then enable kind-specific adapters, integration evidence, and release metadata checks. Disabling optional adapters leaves ownership, source-hash, approval, and task dependency gates active. No contract source or database data is rewritten by this feature.",
+      "source_path": ".project/project-contract-types/architecture.md",
+      "source_hash": "694722ce191a2a885ef613e88797728304b54d9d1a36934aa6c6401d67c5e822",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "rollout",
+        "rollback",
+        "first",
+        "validate",
+        "existing",
+        "registries",
+        "without",
+        "changing",
+        "behavior",
+        "then",
+        "enable",
+        "kind"
+      ],
+      "budget": {
+        "summary_chars": 341,
+        "source_bytes": 343
+      }
+    },
+    {
+      "id": "architecture:.project/project-contract-types/architecture.md#scheduling-and-context",
+      "topic": "Scheduling and context",
+      "summary": "## Scheduling and context An Architect-owned task writes each public contract source. Consumer and producer tasks declare exact contract references and transitively depend on the writer. Context packing includes only participating services and contracts. Contract source approval remains a named-user action bound to its on-disk hash; semantic compatibility evidence supplements but does not replace ",
+      "source_path": ".project/project-contract-types/architecture.md",
+      "source_hash": "5f71aceb8bbfb1d74a48d4215ff2d6eb8f3545b35d93a19a2cfd3a2560c4efc6",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "scheduling",
+        "context",
+        "architect",
+        "owned",
+        "task",
+        "writes",
+        "each",
+        "public",
+        "contract",
+        "source",
+        "consumer",
+        "producer"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 412
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#1-canonical-sources-and-boundary",
+      "topic": "1. Canonical sources and boundary",
+      "summary": "## 1. Canonical sources and boundary `.knowledge-index/` is a **derived, regenerable projection**. It is never a canonical source and is never hand-authored beyond an explicit approve/supersede action taken through the bootstrap flow (T3/T4). Canonical sources it may project from, in precedence order: 1. `.project/<feature>/decisions.md` — feature-scoped decisions (highest precedence: most specifi",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "a83331d0860255ddf6fcf7f9ff21781858f830fea85c95a37949106c3c786b0b",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "canonical",
+        "sources",
+        "boundary",
+        "knowledge",
+        "index",
+        "derived",
+        "regenerable",
+        "projection",
+        "never",
+        "source",
+        "hand",
+        "authored"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1215
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#10-risks-carried-from-plan-md-mapped-to-a-concrete-mechanism",
+      "topic": "10. Risks carried from plan.md, mapped to a concrete mechanism",
+      "summary": "## 10. Risks carried from plan.md, mapped to a concrete mechanism | Risk (plan.md) | Mechanism here | |---|---| | Stale/contradictory summaries mislead agents | §4 hash-gated `status`, explicit `CONFLICT` marker, canonical fallback line | | Index regrows the token problem it solves | §3 per-item `budget.summary_chars` + token-budget.md's existing cutting order as sole cap; K default bounded (§8 of",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "e218dec9aa5d4e37b3ce0106f5a8bd31531ea585aecafbfd31805b07382e54e9",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "risks",
+        "carried",
+        "from",
+        "plan",
+        "mapped",
+        "concrete",
+        "mechanism",
+        "risk",
+        "here",
+        "stale",
+        "contradictory",
+        "summaries"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1197
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#11-open-items-for-downstream-tasks",
+      "topic": "11. Open items for downstream tasks",
+      "summary": "## 11. Open items for downstream tasks - T2 fixes the exact default `K` (candidate default: 5) and per-item `summary_chars` cap (default: 400) as configuration, not schema — tunable later without a contract change. - T4 owns the exact redaction pattern list (§5) and conflict-detection keyword-overlap threshold (§4) as implementation detail within this contract. - T6 must include a fixture proving ",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "8a6b150ec12a00bbdb8aac7e1633dec6a7fd4c0ba84192ddbc3f1fd8f8590c89",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "open",
+        "items",
+        "downstream",
+        "tasks",
+        "fixes",
+        "exact",
+        "default",
+        "candidate",
+        "item",
+        "summary",
+        "chars",
+        "configuration"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 761
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#2-projection-item-schema",
+      "topic": "2. Projection item schema",
+      "summary": "## 2. Projection item schema Each entry in `.knowledge-index/index.json` has this shape: ``` { \"id\": \"<source-kind>:<source-relpath>#<anchor>\", \"topic\": \"short human label\", \"summary\": \"<= 400 chars, plain-text fact extract, no directives\", \"source_path\": \"relative path to the canonical source\", \"source_hash\": \"sha256 of the exact byte range summarized\", \"status\": \"approved | stale | superseded | ",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "22931f8627c96672727845f429caf4441f64593eb9d5e30cc338a846258477e2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "projection",
+        "item",
+        "schema",
+        "each",
+        "entry",
+        "knowledge",
+        "index",
+        "json",
+        "this",
+        "shape",
+        "source",
+        "kind"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 2194
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#3-deterministic-selection-reconciliation-with-context-ranking-token-budget",
+      "topic": "3. Deterministic selection — reconciliation with context-ranking / token-budget",
+      "summary": "## 3. Deterministic selection — reconciliation with context-ranking / token-budget This is the required reconciliation (T1 accept criterion 4): `.knowledge-index/` does **not** introduce a second relevance/budget authority. It plugs into the existing four-stage pipeline (`context-loader.md` → `context-ranking.md` → `token-budget.md` → `context-assembler.md`) at one specific point: - **Tier mapping",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "f20f3e0b2b5a7667fdd7bdc11e5932d919c814c77fabe0948782c956ca251473",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "deterministic",
+        "selection",
+        "reconciliation",
+        "with",
+        "context",
+        "ranking",
+        "token",
+        "budget",
+        "this",
+        "required",
+        "accept",
+        "criterion"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 2299
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#4-status-lifecycle-staleness-and-conflicts",
+      "topic": "4. Status lifecycle, staleness, and conflicts",
+      "summary": "## 4. Status lifecycle, staleness, and conflicts - Projector recomputes `source_hash` every run. Mismatch against the current source file → `status: stale`. A stale item is **never served as an approved candidate**; `source_path` and `id` are retained so `context-pack.sh` can print an explicit `stale — see <source_path> directly` fallback line instead of silently reusing an old summary (plan.md ri",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "8a11f6dca6a8606b49a7b2cc6b319e5ba677761142e14301274e34b6bda2b4e3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "status",
+        "lifecycle",
+        "staleness",
+        "conflicts",
+        "projector",
+        "recomputes",
+        "source",
+        "hash",
+        "every",
+        "mismatch",
+        "against",
+        "current"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1486
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#5-secret-and-prompt-injection-boundary",
+      "topic": "5. Secret and prompt-injection boundary",
+      "summary": "## 5. Secret and prompt-injection boundary - Before an item may reach `status: approved`, the projector runs a redaction scan (credential/token/connection-string shaped patterns). A match **rejects the whole item** (status `rejected`, logged) — no partial-redact-and-serve, since partial redaction creates false confidence that the rest is safe. - Summaries are data, never instructions: `context-pac",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "47dff9e233af3322fab7b5661ed4c64e0b24f8deee60abbd71b9d89ed561d089",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "secret",
+        "prompt",
+        "injection",
+        "boundary",
+        "before",
+        "item",
+        "reach",
+        "status",
+        "approved",
+        "projector",
+        "runs",
+        "redaction"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 713
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#6-rollback",
+      "topic": "6. Rollback",
+      "summary": "## 6. Rollback `.knowledge-index/` is fully regenerable, disposable, and committed — it carries no external state and needs no bespoke uninstall mechanism: - **Rollback = delete-and-regenerate or `git checkout -- .knowledge-index/`.** Because every item is hash-verified against its canonical source, a reverted or deleted `.knowledge-index/` reconstructs to the same content on the next `--refresh`.",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "31e99825eb7cc2f1bf9a6c1d328fa3d9bc752756dfb25c4480e1cd4dcde6b0ae",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "rollback",
+        "knowledge",
+        "index",
+        "fully",
+        "regenerable",
+        "disposable",
+        "committed",
+        "carries",
+        "external",
+        "state",
+        "needs",
+        "bespoke"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1071
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#7-compatibility-with-ai-kit-knowledge-graduation-and-context-pack-sh",
+      "topic": "7. Compatibility with `.ai-kit/knowledge/` graduation and `context-pack.sh`",
+      "summary": "## 7. Compatibility with `.ai-kit/knowledge/` graduation and `context-pack.sh` - The `.ai-kit/knowledge/` graduation flow in `knowledge-loader.md` (feature closes → Documenter moves durable rules into `decisions.md`/`conventions.md`/`postmortems.md`) is **unchanged** and remains the only hand-authoring surface. `.knowledge-index/` never accepts direct hand-authored content — it only ever *projects",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "a38a1533b79af3d0e80dd2afdc7f3153ac1af62d6fb0f34897d14396a57db4a2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "compatibility",
+        "with",
+        "knowledge",
+        "graduation",
+        "context",
+        "pack",
+        "flow",
+        "loader",
+        "feature",
+        "closes",
+        "documenter",
+        "moves"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1097
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#7-compatibility-with-ai-knowledge-graduation-and-context-pack-sh",
+      "topic": "7. Compatibility with `.ai-kit/knowledge/` graduation and `context-pack.sh`",
+      "summary": "## 7. Compatibility with `.ai-kit/knowledge/` graduation and `context-pack.sh` - The `.ai-kit/knowledge/` graduation flow in `knowledge-loader.md` (feature closes → Documenter moves durable rules into `decisions.md`/`conventions.md`/`postmortems.md`) is **unchanged** and remains the only hand-authoring surface. `.knowledge-index/` never accepts direct hand-authored content — it only ever *projects from* `",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "0fe5e49be42f12b05ea39624b05765411bc8de4fb46bf9bb329c65772c4762e2",
+      "status": "stale",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "compatibility",
+        "with",
+        "knowledge",
+        "graduation",
+        "context",
+        "pack",
+        "flow",
+        "loader",
+        "feature",
+        "closes",
+        "documenter",
+        "moves"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1081
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#8-agents-md-footprint-constraint",
+      "topic": "8. AGENTS.md footprint constraint",
+      "summary": "## 8. AGENTS.md footprint constraint Restated here so T2/T5 authors do not need to rediscover it (already an accept criterion on T5): the AGENTS.md edit is limited to ≤4 pointer lines in the existing \"Route the request\" one-line-per-route style, naming `.ai-kit/modules/context/knowledge-loader.md` as the destination for all schema/flag/precedence/fallback detail. No schema or behavior detail is du",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "9f66499dc5e142dbfc5f4e54791f6ce32053fb78146a4dfe656c46349e7910a1",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "agents",
+        "footprint",
+        "constraint",
+        "restated",
+        "here",
+        "authors",
+        "need",
+        "rediscover",
+        "already",
+        "accept",
+        "criterion",
+        "edit"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 607
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#9-decisions-and-rejected-alternatives",
+      "topic": "9. Decisions and rejected alternatives",
+      "summary": "## 9. Decisions and rejected alternatives - **sha256 over a new/lighter hash** — reuse the exact convention already in `qa_report.py` rather than introduce a second hashing scheme in the codebase. - **Deterministic keyword-overlap scoring over embeddings/ML ranking** — matches the plan's explicit \"deterministic\" requirement and avoids a new runtime dependency; simpler option chosen per architect d",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "4c973bd0ec69edb434aefc7e9dce6307a01108c52d4869dafb93eef7d1b1b5a0",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "decisions",
+        "rejected",
+        "alternatives",
+        "sha256",
+        "over",
+        "lighter",
+        "hash",
+        "reuse",
+        "exact",
+        "convention",
+        "already",
+        "report"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 832
+      }
+    },
+    {
+      "id": "architecture:.project/project-knowledge-index/architecture.md#architecture-project-knowledge-index",
+      "topic": "Architecture — project-knowledge-index",
+      "summary": "# Architecture — project-knowledge-index status: draft (T1) owner: architect inputs: plan.md, tasks.md, .ai-kit/knowledge/*, .ai-kit/modules/context/*, .ai-kit/scripts/context-pack.sh, .ai-kit/scripts/task_state.py, .ai-kit/install/install.sh",
+      "source_path": ".project/project-knowledge-index/architecture.md",
+      "source_hash": "b1fab765e2e2d320b415d134606647c73e28e31b29ceaf20aa17eadc92425c30",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "project",
+        "knowledge",
+        "index",
+        "status",
+        "draft",
+        "owner",
+        "architect",
+        "inputs",
+        "plan",
+        "tasks",
+        "modules"
+      ],
+      "budget": {
+        "summary_chars": 242,
+        "source_bytes": 247
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#architecture-rename-ai-to-ai-kit",
+      "topic": "Architecture — rename-ai-to-ai-kit",
+      "summary": "# Architecture — rename-ai-to-ai-kit",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "d374efec28bee5ecd2bdcfd26dbc3baf4b8d9fe0becd55041c21bfdc082e4733",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "rename"
+      ],
+      "budget": {
+        "summary_chars": 36,
+        "source_bytes": 40
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#binary-acceptance-criteria-whole-feature",
+      "topic": "Binary acceptance criteria (whole feature)",
+      "summary": "### Binary acceptance criteria (whole feature) 1. `.ai/` no longer exists; `.ai-kit/` exists with the full tree; `git status` reports the rename. 2. `grep -rE '\\.ai(/|\")'` over tracked files (excluding `.git/`, `.workspace/`) returns **zero** matches. 3. `grep -n 'starterkit.ai-kit-orchestration@1.0.0' .ai-kit/contracts/ai-kit-orchestration.v1.schema.json` still matches (exclusion intact). 4. `bas",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "5acf82d33347154112c77ac748c22e867d2c44fc298d51b72d0515cd37a1119f",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "binary",
+        "acceptance",
+        "criteria",
+        "whole",
+        "feature",
+        "longer",
+        "exists",
+        "with",
+        "full",
+        "tree",
+        "status",
+        "reports"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 691
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#contract-rename-the-maintained-kit-directory-ai-ai-kit",
+      "topic": "Contract: rename the maintained kit directory `.ai/` → `.ai-kit/`",
+      "summary": "## Contract: rename the maintained kit directory `.ai/` → `.ai-kit/`",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "5290c0bfd9d292d49f699c5de529da19d6b33bdcec5217adde3d1e8491a1a30a",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "contract",
+        "rename",
+        "maintained",
+        "directory"
+      ],
+      "budget": {
+        "summary_chars": 68,
+        "source_bytes": 72
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#decisions",
+      "topic": "Decisions",
+      "summary": "### Decisions - **No backward-compat symlink** `.ai` → `.ai-kit`. The kit is tool-neutral and the only consumers are in-tree; a symlink would paper over missed references and defeat criterion 2. - **No behavior change**: this is a pure mechanical rename; any drive-by fix is out of scope (refactoring module: \"no mixed diffs\").",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "9eae48f8572b2f9e59454c4ebf37f9f6a7097daebf6c650f511436302de0b9a3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "decisions",
+        "backward",
+        "compat",
+        "symlink",
+        "tool",
+        "neutral",
+        "only",
+        "consumers",
+        "tree",
+        "would",
+        "paper",
+        "over"
+      ],
+      "budget": {
+        "summary_chars": 327,
+        "source_bytes": 337
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#derived-artifacts-to-regenerate-after-source-rewrite",
+      "topic": "Derived artifacts to regenerate (after source rewrite)",
+      "summary": "### Derived artifacts to regenerate (after source rewrite) | Artifact | Producer | Regenerate via | |---|---|---| | `.agents/skills/**` | projection of `.ai-kit/skills/*/SKILL.md` | `bash .ai-kit/scripts/sync-skills.sh` | | `.claude/skills/**` | projection of `.ai-kit/skills/*/SKILL.md` | same sync | | `.knowledge-index/**` | projection of `.project/` + `.ai-kit/knowledge/` | `.ai-kit/scripts/know",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "2f4fe7317d2c9c7e8fc32d393b9209703ce6c82e1e658221a02f73dfaee9dd6d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "derived",
+        "artifacts",
+        "regenerate",
+        "after",
+        "source",
+        "rewrite",
+        "artifact",
+        "producer",
+        "agents",
+        "skills",
+        "projection",
+        "skill"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 618
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#exclusions-must-not-be-touched",
+      "topic": "Exclusions (MUST NOT be touched)",
+      "summary": "### Exclusions (MUST NOT be touched) - `starterkit.ai-kit-orchestration@1.0.0` in `.ai-kit/contracts/ai-kit-orchestration.v1.schema.json` — it is a contract identifier, not a path; it already contains `ai-kit` and must survive the rewrite byte-for-byte. - Any pre-existing `ai-kit` token without a leading dot (feature names, skill names, contract names). - `.git/` internals and `.workspace/` (local",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "e06f71667e529dc77615c06360560528318c209edac7666b8bc209352640cefc",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "exclusions",
+        "must",
+        "touched",
+        "starterkit",
+        "orchestration",
+        "contracts",
+        "schema",
+        "json",
+        "contract",
+        "identifier",
+        "path",
+        "already"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 427
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#operation",
+      "topic": "Operation",
+      "summary": "### Operation Single atomic commit: ```bash git mv .ai .ai-kit",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "319c04d5a84038406efc41e78c6b5a69f7de13981e0d4b250491300199877240",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "operation",
+        "single",
+        "atomic",
+        "commit",
+        "bash"
+      ],
+      "budget": {
+        "summary_chars": 62,
+        "source_bytes": 64
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#replacement-rules",
+      "topic": "Replacement rules",
+      "summary": "### Replacement rules | Target | Rule | |---|---| | Path literal `.ai/` | Replace with `.ai-kit/` everywhere in tracked files (scripts, harness Python, tests, installer + templates, hooks, CI, skills, agents, modules, knowledge, root docs, config, `ai.yaml`) | | Directory-existence sentinel `.ai` | Replace with `.ai-kit` in: `harness/store.py` (\"repository root must contain AGENTS.md and .ai/\"), `",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "8b93e2fe561f90c89d25dc823e307320230d49d4bf8afbf2f502457a1518a6de",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "replacement",
+        "rules",
+        "target",
+        "rule",
+        "path",
+        "literal",
+        "replace",
+        "with",
+        "everywhere",
+        "tracked",
+        "files",
+        "scripts"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 661
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#then-rewrite-every-in-tree-ai-literal-to-ai-kit-in-the-same-commit",
+      "topic": "then rewrite every in-tree `.ai/` literal to `.ai-kit/` in the same commit",
+      "summary": "# then rewrite every in-tree `.ai/` literal to `.ai-kit/` in the same commit ``` The `git mv` and the content rewrite MUST land in one commit. Splitting them would leave an intermediate commit where scripts still point at `.ai/` while the directory is gone — a broken tree, which violates the refactoring invariant (\"green at every commit\").",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "e68f9f424f03061f24fe0cec8cecad227d045db4b978c871b23a12e63ce9e7d8",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "then",
+        "rewrite",
+        "every",
+        "tree",
+        "literal",
+        "same",
+        "commit",
+        "content",
+        "must",
+        "land",
+        "splitting",
+        "them"
+      ],
+      "budget": {
+        "summary_chars": 341,
+        "source_bytes": 346
+      }
+    },
+    {
+      "id": "architecture:.project/rename-ai-to-ai-kit/architecture.md#two-config-files-do-not-conflate",
+      "topic": "Two config files — do not conflate",
+      "summary": "### Two config files — do not conflate - `.ai-kit/config.json` — kit policy (referenced by `kit_config` in `ai.yaml`). - `.ai-kit/harness/config.json` — harness runtime config (referenced by `harness_config`). Both move under `.ai-kit/`, but their references are distinct strings and both must be rewritten.",
+      "source_path": ".project/rename-ai-to-ai-kit/architecture.md",
+      "source_hash": "dbc85526b1916dc86df1a86da11919155e017204eaf1bc4deb886822b974566a",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "config",
+        "files",
+        "conflate",
+        "json",
+        "policy",
+        "referenced",
+        "yaml",
+        "harness",
+        "runtime",
+        "both",
+        "move",
+        "under"
+      ],
+      "budget": {
+        "summary_chars": 307,
+        "source_bytes": 319
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#1-api-surface",
+      "topic": "1. API surface",
+      "summary": "## 1. API surface `request_input(feature, *, actor=\"orchestrator\", reason: str)` (`engine.py:522`) **is unchanged** — same signature, same behavior, same plain-string `reason`. Existing callers (including `cli.py`'s `needs-input` command) keep working with zero modification. Two new `Engine` methods are added, mirroring `record_remediation` / `resolve_remediation`'s split (one method to open a rec",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "b312efe975b8ff8e9fb49b12235484683bfe9055cbc150f9b7ad6115b4868e81",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "surface",
+        "request",
+        "input",
+        "feature",
+        "actor",
+        "orchestrator",
+        "reason",
+        "engine",
+        "unchanged",
+        "same",
+        "signature",
+        "behavior"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1990
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#2-input-requests-schema",
+      "topic": "2. `input_requests` schema",
+      "summary": "## 2. `input_requests` schema Added to `new_state()` (`models.py:72`) alongside `\"remediations\": []`: `\"input_requests\": []`. Each entry, mirroring the field-discipline `validate_state` already applies to `remediations` (`models.py:309-344`, exact-field-set enforced via `set(remediation) != required`): ```python { \"id\": \"IN-1\", # ^IN-[1-9][0-9]*$, same style as REM-<n>/R<n> \"reason\": \"architecture",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "6146f805ce0a0652db9234b8469f06ae21b4e83a20bbe753a1a43f0bc4b28149",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "input",
+        "requests",
+        "schema",
+        "added",
+        "state",
+        "models",
+        "alongside",
+        "remediations",
+        "each",
+        "entry",
+        "mirroring",
+        "field"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 3074
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#3-gate-boundary-do-not-blur-with-approval",
+      "topic": "3. Gate boundary (do not blur with approval)",
+      "summary": "## 3. Gate boundary (do not blur with approval) `request_structured_input`/`answer_input` never call `approve_plan`, `approve_contract`, or any G1/G3/G5-adjacent method, and never write to `tasks`, `contracts`, or `plan_approvals`. They touch exactly `run` and `input_requests`. This is the same boundary `record_remediation`/ `resolve_remediation` already respect (a remediation records a finding; i",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "aff247a4ab75e8b1f5c2904322a33b9df55772649aad6c495a5494d3283ff052",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "gate",
+        "boundary",
+        "blur",
+        "with",
+        "approval",
+        "request",
+        "structured",
+        "input",
+        "answer",
+        "never",
+        "call",
+        "approve"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1070
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#4-plan-revision-binding-and-staleness",
+      "topic": "4. `plan_revision` binding and staleness",
+      "summary": "## 4. `plan_revision` binding and staleness At creation, `request_structured_input` stamps the request's `plan_revision` from `int(state.get(\"plan_revision\", 0))` — the exact same field `approve_plan` already binds to (`engine.py:393`). At answer time, `answer_input`: 1. Loads the request by `id`; `EngineError` if unknown or `status != \"pending\"`. 2. Recomputes `canonical_digest({\"questions\": stor",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "36e52026078e18e230612d94431b46fa132692706dbc3936a660339f48a71681",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "plan",
+        "revision",
+        "binding",
+        "staleness",
+        "creation",
+        "request",
+        "structured",
+        "input",
+        "stamps",
+        "from",
+        "state",
+        "exact"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1931
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#5-rendering-location-module-not-a-new-skill",
+      "topic": "5. Rendering location (module, not a new skill)",
+      "summary": "## 5. Rendering location (module, not a new skill) Rendering instructions live in **`.ai-kit/modules/planning/ask-question.md`** — a module, not a ninth top-level skill. Reasoning: skills in `.ai-kit/skills/` are user-invocable top-level workflows already enumerated in AGENTS.md's \"Route the request\" table (8 entries); `ask_question` is not a route a user picks, it is a sub-behavior other skills/a",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "22991a751cf1b029ccca48f703c2e8d235696e36504f94ea332fff2829d73f09",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "rendering",
+        "location",
+        "module",
+        "skill",
+        "instructions",
+        "live",
+        "modules",
+        "planning",
+        "question",
+        "ninth",
+        "level",
+        "reasoning"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1959
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#6-cli-surface-t3-sketched-here-for-the-contract",
+      "topic": "6. CLI surface (T3, sketched here for the contract)",
+      "summary": "## 6. CLI surface (T3, sketched here for the contract) Two new `cli.py` subcommands, following the exact pattern of the existing `needs-input`/`approve-plan` parsers (`cli.py:411-419`, `462-465`): - `request-input <feature> --reason <text> --questions-file <path>` → `engine.request_structured_input`. - `answer-input <feature> --request-id <id> --answers-file <path>` → `engine.answer_input`. **`--q",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "40e6a4e314533808d324c76e6aab4d0e73de7134bb83b2967715610e97b254fd",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "surface",
+        "sketched",
+        "here",
+        "contract",
+        "subcommands",
+        "following",
+        "exact",
+        "pattern",
+        "existing",
+        "needs",
+        "input",
+        "approve"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1309
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#7-decisions-and-rejected-alternatives",
+      "topic": "7. Decisions and rejected alternatives",
+      "summary": "## 7. Decisions and rejected alternatives - **Two new engine methods over one parameterized `request_input`** — keeps the existing, tested, unmodified signature untouched; matches this codebase's existing one-thin-method-per-operation style. - **`canonical_digest` over a new hash helper** — reuses the exact function three other authorization-relevant digests in `policy.py` already use; rejected in",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "2158de25c68baaa1c5c214863ef5f46090ffd1dac6dee8243c6fd4176c1fb5a2",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "decisions",
+        "rejected",
+        "alternatives",
+        "engine",
+        "methods",
+        "over",
+        "parameterized",
+        "request",
+        "input",
+        "keeps",
+        "existing",
+        "tested"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1160
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#8-risks-carried-from-plan-md-mapped-to-a-concrete-mechanism",
+      "topic": "8. Risks carried from plan.md, mapped to a concrete mechanism",
+      "summary": "## 8. Risks carried from plan.md, mapped to a concrete mechanism | Risk (plan.md) | Mechanism here | |---|---| | Breaking the plain-`reason` path | `request_input`'s signature/body is untouched; new behavior lives entirely in two new methods (§1) | | Stale answer applied after replan | `plan_revision` stamped at creation, re-checked at answer time, `EngineError` on mismatch (§4) | | Validation spl",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "a55ac266c80909aa2bb3f222eef5de8556789f1725d05c1ec82b8f60d8e6f83d",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "risks",
+        "carried",
+        "from",
+        "plan",
+        "mapped",
+        "concrete",
+        "mechanism",
+        "risk",
+        "here",
+        "breaking",
+        "plain",
+        "reason"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 820
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#9-open-items-for-downstream-tasks",
+      "topic": "9. Open items for downstream tasks",
+      "summary": "## 9. Open items for downstream tasks - T2 adds the `input_requests` block to `validate_state` and `new_state`, and implements the two engine methods exactly as specified in §1/§2/§4. - T3 adds the two `cli.py` subcommands per §6; confirms no `harness.sh` change is needed (already verified here by reading the script). - T4 writes `.ai-kit/modules/planning/ask-question.md` per §5 and the two one-li",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "51e7307e2c2ffee73e1e2715716b0c9c0b80dfa62dc3dfa8bd8e3e9c1041aa81",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "open",
+        "items",
+        "downstream",
+        "tasks",
+        "adds",
+        "input",
+        "requests",
+        "block",
+        "validate",
+        "state",
+        "implements",
+        "engine"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 713
+      }
+    },
+    {
+      "id": "architecture:.project/structured-user-input/architecture.md#architecture-structured-user-input",
+      "topic": "Architecture — structured-user-input",
+      "summary": "# Architecture — structured-user-input status: draft (T1) owner: architect inputs: plan.md, tasks.md, .ai-kit/harness/{engine.py,models.py,cli.py,store.py,policy.py} (read in full) This document extends the **existing** `needs_input` run-state machine. Every mechanism below is modeled directly on an existing, already-shipped pattern in `.ai-kit/harness/` — remediations (`record_remediation`/`resol",
+      "source_path": ".project/structured-user-input/architecture.md",
+      "source_hash": "5fe08df326a5d0faf44b4d9175bf61d7eef5f6213f32202e466d8f21b26749f0",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "architecture",
+        "structured",
+        "user",
+        "input",
+        "status",
+        "draft",
+        "owner",
+        "architect",
+        "inputs",
+        "plan",
+        "tasks",
+        "harness"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 593
+      }
+    }
+  ]
+}

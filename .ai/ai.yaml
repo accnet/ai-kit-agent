@@ -1,8 +1,0 @@
-version: 0.16.0
-mode: harness
-test_command: bash .ai/tests/run.sh
-git_qa_command: bash .ai/scripts/git-qa.sh check worktree
-skill_source: .ai/skills
-harness_command: bash .ai/scripts/harness.sh
-harness_config: .ai/harness/config.json
-kit_config: .ai/config.json

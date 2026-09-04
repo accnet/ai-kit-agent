@@ -1,0 +1,10 @@
+# Executed only through an explicit `.ai-kit/scripts/harness.sh` provider action.
+routing_mode: harness
+primary: codex
+active_agent_reviewer: codex
+independent_reviewer: claude
+trivial_review: active-agent
+provider_config: .ai-kit/harness/config.json
+review_policy_config: .ai-kit/config.json
+task_execution_policy_config: .ai-kit/config.json
+quality_routing_policy_config: .ai-kit/config.json
