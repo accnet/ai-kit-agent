@@ -50,6 +50,7 @@ except ImportError:
     adapter_for = None
 from providers import ProviderError, ProviderRequest
 from verification import run_verification
+from prompt_evidence import EvidenceError, compact_task, prepare_evidence, verification_binding
 from schemas import EXECUTION_SCHEMA, PLAN_SCHEMA, REVIEW_SCHEMA
 from store import RepositoryStore, StoreError
 from worktrees import GitWorkspaceManager, PatchArtifact, WorkspaceError, WorkspaceRecord
@@ -893,9 +894,13 @@ class HarnessEngine:
             max_chars=self.context_budget,
             include_project_instructions=not self._provider_loads_project_instructions(provider),
         )
+        package = self._prepare_evidence_for_call(
+            state, task, execution_root, provider, actor, workspace_record
+        )
         request = ProviderRequest(
             "implementer",
-            self._execution_prompt(state, task, self.memory.render_context(context)),
+            self._execution_prompt(state, task, self.memory.render_context(context),
+                                   evidence_view=package.view),
             EXECUTION_SCHEMA,
             working_directory=execution_root if workspace_record is not None else None,
         )
@@ -905,8 +910,8 @@ class HarnessEngine:
             snapshot_repository(self.store.root) if workspace_record is not None else before
         )
         try:
-            result = provider.invoke(request)
-        except ProviderError as exc:
+            result = self._invoke_with_evidence(provider, request, package)
+        except (ProviderError, EvidenceError) as exc:
             actual = changed_paths(before, snapshot_repository(execution_root))
             main_actual = (
                 changed_paths(main_before, snapshot_repository(self.store.root))
@@ -1038,6 +1043,9 @@ class HarnessEngine:
             elif sorted(set(result.get("changed_files", []))) != list(artifact.changed_files):
                 verification_failure = "provider changed_files does not match the captured patch"
 
+        binding = verification_binding(
+            state, dict(task, verification_evidence=verification_results), execution_root, self.store.root
+        )
         with self.store.lock(feature):
             state = self.store.load_state(feature)
             task = task_by_id(state, task["id"])
@@ -1051,6 +1059,7 @@ class HarnessEngine:
                         raise PolicyError(verification_failure)
                 except PolicyError as exc:
                     task["verification_evidence"] = verification_results
+                    task["verification_binding"] = binding
                     phase, cleanup_error = self._discard_workspace(workspace_record)
                     if cleanup_error:
                         task.setdefault("workspace", {})["last_error"] = cleanup_error
@@ -1062,6 +1071,7 @@ class HarnessEngine:
                     raise
                 task["evidence"] = result["evidence"]
                 task["verification_evidence"] = verification_results
+                task["verification_binding"] = binding
                 task["changed_files"] = result["changed_files"]
                 task["actual_changed_files"] = (
                     list(artifact.changed_files) if artifact is not None else actual_changed
@@ -1159,6 +1169,9 @@ class HarnessEngine:
             max_chars=self.context_budget,
             include_project_instructions=not self._provider_loads_project_instructions(provider),
         )
+        package = self._prepare_evidence_for_call(
+            state, task, review_root, provider, actor, workspace_record, review=True
+        )
         request = ProviderRequest(
             "reviewer",
             self._review_prompt(
@@ -1166,6 +1179,7 @@ class HarnessEngine:
                 task,
                 self.memory.render_context(context),
                 review_policy=effective_review_policy,
+                evidence_view=package.view,
             ),
             REVIEW_SCHEMA,
             working_directory=review_root if workspace_record is not None else None,
@@ -1176,7 +1190,7 @@ class HarnessEngine:
             snapshot_repository(self.store.root) if workspace_record is not None else before
         )
         try:
-            result = provider.invoke(request)
+            result = self._invoke_with_evidence(provider, request, package)
         except Exception as exc:
             actual_changed = changed_paths(before, snapshot_repository(review_root))
             main_changed = (
@@ -1184,13 +1198,15 @@ class HarnessEngine:
                 if workspace_record is not None
                 else []
             )
-            if actual_changed or main_changed:
+            if actual_changed or main_changed or isinstance(exc, EvidenceError):
                 detail = (
                     self._review_mutation_detail(actual_changed, main_changed)
                     if workspace_record is not None
                     else "review provider mutated repository files: %s"
                     % ", ".join(actual_changed)
                 )
+                if isinstance(exc, EvidenceError):
+                    detail = str(exc) + ("; " + detail if actual_changed or main_changed else "")
                 if workspace_record is not None:
                     if any(
                         path.startswith(".project/%s/" % feature)
@@ -1207,6 +1223,10 @@ class HarnessEngine:
                         provider.name,
                         detail,
                         workspace_phase=phase,
+                    )
+                elif isinstance(exc, EvidenceError):
+                    self._record_review_failure(
+                        feature, task_id, actor, provider.name, detail, event="evidence_rejected"
                     )
                 raise PolicyError(detail) from exc
             raise
@@ -1425,6 +1445,7 @@ class HarnessEngine:
         detail: str,
         *,
         workspace_phase: Optional[str] = None,
+        event: str = "review_mutation",
     ) -> None:
         with self.store.lock(feature):
             state = self.store.load_state(feature)
@@ -1435,9 +1456,38 @@ class HarnessEngine:
                 task["workspace"]["phase"] = workspace_phase
             self._fail_in_state(state, task, detail)
             self._provider_history(
-                state, provider_name, "reviewer", task_id, "repository_mutation"
+                state, provider_name, "reviewer", task_id,
+                "repository_mutation" if event == "review_mutation" else event
             )
-            self._commit(state, "review_mutation", actor, task=task_id, detail=detail)
+            self._commit(state, event, actor, task=task_id, detail=detail)
+
+    def _prepare_evidence_for_call(
+        self, state, task, root, provider, actor, workspace_record, *, review=False
+    ):
+        try:
+            return prepare_evidence(state, task, self.store.root, root, review=review)
+        except EvidenceError as exc:
+            phase, cleanup_error = self._discard_workspace(workspace_record)
+            detail = str(exc) + ("; " + cleanup_error if cleanup_error else "")
+            if review:
+                self._record_review_failure(
+                    state["feature"], task["id"], actor, provider.name, detail,
+                    workspace_phase=phase, event="evidence_rejected"
+                )
+            else:
+                self._record_failure(
+                    state["feature"], task["id"], actor, detail, provider.name,
+                    workspace_phase=phase
+                )
+            raise
+
+    @staticmethod
+    def _invoke_with_evidence(provider, request, package):
+        try:
+            return provider.invoke(request)
+        finally:
+            package.validate()
+            package.cleanup_projection()
 
     def _discard_workspace(
         self, record: Optional[WorkspaceRecord]
@@ -1684,7 +1734,8 @@ class HarnessEngine:
         )
 
     @staticmethod
-    def _execution_prompt(state: Dict[str, Any], task: Dict[str, Any], context: str) -> str:
+    def _execution_prompt(state: Dict[str, Any], task: Dict[str, Any], context: str,
+                          *, evidence_view: Optional[Dict[str, Any]] = None) -> str:
         graph = HarnessEngine._task_graph_context(state, task)
         workflow, owner_contract = HarnessEngine._execution_profile(task)
         return (
@@ -1703,7 +1754,8 @@ class HarnessEngine:
                 state["goal"],
                 graph,
                 context,
-                json.dumps(task, ensure_ascii=False, indent=2),
+                json.dumps(evidence_view if evidence_view is not None else compact_task(task),
+                           ensure_ascii=False, separators=(",", ":")),
             )
         )
 
@@ -1714,6 +1766,7 @@ class HarnessEngine:
         context: str,
         *,
         review_policy: str = "active-agent",
+        evidence_view: Optional[Dict[str, Any]] = None,
     ) -> str:
         graph = HarnessEngine._task_graph_context(state, task)
         review_instruction = (
@@ -1736,7 +1789,8 @@ class HarnessEngine:
                 state["goal"],
                 graph,
                 context,
-                json.dumps(task, ensure_ascii=False, indent=2),
+                json.dumps(evidence_view if evidence_view is not None else compact_task(task),
+                           ensure_ascii=False, separators=(",", ":")),
             )
         )
 

@@ -51,6 +51,14 @@ Every implementation task (unit level) and every QA task (integration/E2E level)
   fix an environment error, retry flaky tests into green, or waive failing checks.
 - Measure executed checks, duplicate declarations, and log/excerpt bytes from local
   manifests. Missing provider usage stays unknown; bytes are not token/quota counts.
+- For compact prompt evidence, verify exact criterion coverage, manual/command
+  linkage, current failures, not-run declarations, and artifact reconstruction
+  from a fresh provider workspace. Test missing/stale/corrupt/unsafe artifacts
+  and package mutation independently of repository mutation checks.
+- Compare complete prompts on fixed baseline/compact fixtures, including retry
+  and review calls, and disclose empty/tiny overhead and package bytes. The local
+  benchmark is `python3 .ai-kit/tests/test_prompt_evidence.py --benchmark`; it does
+  not call an LLM or authorize reuse of an earlier run's passing tests.
 
 ## Runner Precedence
 Use this precedence when choosing how to run tests:

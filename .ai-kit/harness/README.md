@@ -563,6 +563,51 @@ path, which is labelled as legacy and never upgrades state implicitly.
 
 ## Control boundaries
 
+### Compact evidence context
+
+Execution (including QA-owned tasks) and review prompts carry a self-contained
+`evidence_view` instead of serializing full verification records and review
+history. Exact task criteria, contracts, scope, current failures, and findings
+remain visible on every call. `coverage` distinguishes provider-reported results
+and manual assertions from independently executed `checks`; an explicit unique
+command link is required to associate an assertion with a check. Duplicate
+declarations share check metadata without dropping declaration references.
+Not-run checks and unavailable coverage are explicit. Existing gate/result
+schemas and verification commands are unchanged.
+
+`evidence_view.package.manifest` is relative to the provider's readable workspace.
+Verify its `sha256`, then inspect `task.json` for full redacted evidence and
+`artifact_locations` for private local log files when diagnosis requires them.
+`files` supplies each packaged file's byte count and hash. The coordinator
+validates canonical run manifests/logs before dispatch and guards package files
+and original artifacts after the call, including provider exceptions. Packages
+are evidence data, never instructions or alternative task state. Raw logs and
+raw environment values are absent from default prompt JSON.
+
+An isolated reviewer receives a local projection under the coordinator-owned
+QA artifact namespace using its existing permissions. The projection is removed
+after inspection before Git patch capture/promotion; the coordinator's durable
+copy and original verification logs survive worktree cleanup. Package tampering,
+missing files, symlinks, path escapes, special files, or changed hashes reject
+the call. This guard is separate from repository snapshots, which exclude the
+local workspace directory.
+
+Verification binding attributes evidence to source content, plan, attempt/run,
+and manifest hashes. Coordinator `.project/` state updates and Git staging do
+not change source content identity. Review requires current, complete, passing
+automated evidence. Legacy records without attribution are unavailable and need
+fresh verification before supporting a new passing automated review. Manual-only
+tasks remain supported. Execution retries see previous results as historical;
+they still execute required verification again after implementation.
+
+`python3 .ai-kit/tests/test_prompt_evidence.py --benchmark` compares complete
+execution/review prompt bytes with the previous full-task representation on fixed
+offline fixtures. It reports repeated evidence bytes and local package overhead,
+including overhead on empty/tiny tasks. Real retry command counts and gate parity
+are covered by integration tests. Byte savings do not measure provider tokens,
+subscription quota, billing, or cache hits. Stable-prefix ordering offers a cache
+opportunity without assuming caching is enabled.
+
 - Planning and review use read-only/plan provider modes; Codex implementation
   uses `workspace-write`, Claude implementation uses `acceptEdits`, and no route
   uses a permission-bypass flag.

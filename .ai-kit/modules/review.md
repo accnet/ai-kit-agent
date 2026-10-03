@@ -35,6 +35,15 @@ Every Reviewer task; engineers may load it for self-review before handoff.
   active-agent override.
 - Changing reviewer separation never skips QA, evidence coverage, or any of the
   five review passes.
+- Treat compact `evidence_view` as a self-contained projection of canonical
+  evidence. Reported criterion PASS, manual inspection, and harness check PASS
+  are distinct; do not infer coverage from a global suite result or historical
+  evidence. Every required criterion and unresolved finding must remain visible.
+- Resolve the workspace-relative package manifest and verify its hash/file
+  attribution before following artifact references. Inspect full redacted
+  `task.json` when bounded details are insufficient; open raw logs only for
+  needed diagnosis. Missing/stale/unsafe evidence blocks a new passing review.
+  Isolated packages must remain accessible without granting wider permissions.
 - Inspect existing command/artifact evidence against the reviewed snapshot and
   acceptance criteria before rerunning tests. Another complete suite is warranted
   by changed inputs, missing/stale evidence, or a concrete finding, not merely by

@@ -54,6 +54,7 @@ from schemas import EXECUTION_SCHEMA, PLAN_SCHEMA, REVIEW_SCHEMA  # noqa: E402
 from store import LockError, RepositoryStore, StoreError  # noqa: E402
 from worktrees import GitWorkspaceManager, WorkspaceError, WorkspaceRecord  # noqa: E402
 from verification import reporter as verification_reporter  # noqa: E402
+from prompt_evidence import EvidenceError  # noqa: E402
 
 
 def task(
@@ -581,6 +582,128 @@ class HarnessCase(unittest.TestCase):
             self.assertGreater(first.index('"acceptance_criteria"'), boundary)
             self.assertIn("criterion 1 passes", second)
             self.assertIn('"timeout"', second)
+
+    def test_compact_review_rejects_corrupt_artifact_before_provider_dispatch(self):
+        (self.root / "check.py").write_text("print('verified')\n", encoding="utf-8")
+        self.initialize()
+        self.engine.apply_plan("demo", {"summary": "verify", "tasks": [task(
+            1, verification_commands=[[sys.executable, "check.py"]])]})
+        state = self.execute_success()
+        log = self.root / state["tasks"][0]["verification_evidence"][0]["artifacts"]["stdout"]["path"]
+        log.write_text("tampered", encoding="utf-8")
+        reviewer = named_provider([], "fresh-reviewer")
+        with self.assertRaises(EvidenceError):
+            self.engine.review_with_provider("demo", "T1", reviewer)
+        self.assertEqual(reviewer.calls, [])
+        failed = self.store.load_state("demo")
+        self.assertEqual(failed["tasks"][0]["state"], "ready")
+        self.assertIn("hash/size", failed["tasks"][0]["last_failure"])
+        self.assertEqual(failed["last_transition"]["event"], "evidence_rejected")
+
+    def test_provider_package_mutation_is_rejected_on_execution_and_review(self):
+        self.initialize()
+        self.engine.apply_plan("demo", {"summary": "guard package", "tasks": [task(1)]})
+
+        class Mutator:
+            name = "mutating-fixture"
+
+            def invoke(inner, request):
+                marker = "Task and evidence: " if request.role == "reviewer" else "Task: "
+                view = json.loads(request.prompt.rsplit(marker, 1)[1])
+                package = self.root / view["evidence_view"]["package"]["manifest"]
+                package.write_text("{}", encoding="utf-8")
+                if request.role == "reviewer":
+                    return {"verdict": "approve", "summary": "unsafe approval", "findings": [],
+                            "evidence_checked": ["criterion 1 passes"]}
+                return {"outcome": "success", "summary": "unsafe execution", "evidence": [],
+                        "changed_files": [], "memory": []}
+
+        with self.assertRaisesRegex(EvidenceError, "mutated evidence package"):
+            self.engine.execute_with_provider("demo", Mutator())
+        self.assertEqual(self.store.load_state("demo")["tasks"][0]["state"], "ready")
+        self.execute_success()
+        with self.assertRaisesRegex(PolicyError, "mutated evidence package"):
+            self.engine.review_with_provider("demo", "T1", Mutator())
+        self.assertEqual(self.store.load_state("demo")["tasks"][0]["state"], "ready")
+
+    def test_compact_retry_series_and_fresh_review_keep_failures_and_check_counts(self):
+        script = self.root / "check.py"
+        script.write_text("raise SystemExit(7)\n", encoding="utf-8")
+        self.initialize()
+        self.engine.apply_plan("demo", {"summary": "retry coverage", "tasks": [task(
+            1, verification_commands=[[sys.executable, "check.py"]])]})
+        result = {"outcome": "success", "summary": "check criterion", "changed_files": ["src/1.py"],
+                  "evidence": [{"criterion": "criterion 1 passes", "result": "pass", "detail": "check"}],
+                  "memory": []}
+        views = []
+        with patch("verification.reporter.subprocess.run", wraps=subprocess.run) as run:
+            for attempt in range(3):
+                if attempt == 2:
+                    script.write_text("print('verified')\n", encoding="utf-8")
+                provider = named_provider([result], "offline-implementer")
+                if attempt < 2:
+                    with self.assertRaisesRegex(PolicyError, "independent verification failed"):
+                        self.engine.execute_with_provider("demo", provider)
+                else:
+                    self.engine.execute_with_provider("demo", provider)
+                views.append(json.loads(provider.calls[0].prompt.rsplit("Task: ", 1)[1]))
+            self.assertEqual(run.call_count, 3)
+        for view in views[1:]:
+            self.assertEqual(view["acceptance_criteria"], ["criterion 1 passes"])
+            self.assertIn("independent verification failed", view["last_failure"])
+            self.assertEqual(view["evidence_view"]["checks"][0]["status"], "fail")
+        fresh = named_provider([{"verdict": "approve", "summary": "fresh review", "findings": [],
+                                 "evidence_checked": ["criterion 1 passes"]}], "offline-reviewer")
+        final = self.engine.review_with_provider("demo", "T1", fresh)
+        reviewed = json.loads(fresh.calls[0].prompt.rsplit("Task and evidence: ", 1)[1])
+        self.assertEqual(reviewed["evidence_view"]["freshness"], "current")
+        self.assertEqual(reviewed["evidence_view"]["checks"][0]["status"], "pass")
+        self.assertEqual(final["tasks"][0]["state"], "complete")
+        self.assertEqual(final["tasks"][0]["attempts"], 2)
+
+    def test_baseline_and_compact_prompt_lifecycles_have_identical_gate_outcomes(self):
+        original_execution = HarnessEngine._execution_prompt
+        original_review = HarnessEngine._review_prompt
+        observed = []
+        for baseline in (True, False):
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / "AGENTS.md").write_text("# fixture rules\n", encoding="utf-8")
+                (root / ".ai-kit").mkdir()
+                (root / "features/paired").mkdir(parents=True)
+                (root / "features/paired/brief.md").write_text("# Paired coverage\n", encoding="utf-8")
+                (root / "check.py").write_text("print('verified')\n", encoding="utf-8")
+                store = RepositoryStore(root)
+                engine = HarnessEngine(store)
+                engine.initialize("paired", "Preserve gate behavior")
+                engine.apply_plan("paired", {"summary": "paired", "tasks": [task(
+                    1, verification_commands=[[sys.executable, "check.py"]])]})
+
+                def old_execution(state, bounded, context, **kwargs):
+                    prompt = original_execution(state, bounded, context, **kwargs)
+                    return prompt.rsplit("Task: ", 1)[0] + "Task: " + json.dumps(bounded, indent=2)
+
+                def old_review(state, bounded, context, **kwargs):
+                    prompt = original_review(state, bounded, context, **kwargs)
+                    return prompt.rsplit("Task and evidence: ", 1)[0] + "Task and evidence: " + json.dumps(bounded, indent=2)
+
+                with patch.object(HarnessEngine, "_execution_prompt", staticmethod(
+                        old_execution if baseline else original_execution)), patch.object(
+                        HarnessEngine, "_review_prompt", staticmethod(old_review if baseline else original_review)), patch(
+                        "verification.reporter.subprocess.run", wraps=subprocess.run) as run:
+                    engine.execute_with_provider("paired", named_provider([{
+                        "outcome": "success", "summary": "same result", "changed_files": ["src/1.py"],
+                        "evidence": [{"criterion": "criterion 1 passes", "result": "pass", "detail": "same check"}],
+                        "memory": []}], "implementer"))
+                    state = engine.review_with_provider("paired", "T1", named_provider([{
+                        "verdict": "approve", "summary": "same review", "findings": [],
+                        "evidence_checked": ["criterion 1 passes"]}], "reviewer"))
+                bounded = state["tasks"][0]
+                observed.append((state["status"], bounded["state"], bounded["attempts"],
+                                 bounded["acceptance_criteria"], bounded["verification_commands"],
+                                 [item["passed"] for item in bounded["verification_evidence"]], run.call_count))
+        self.assertEqual(observed[0], observed[1])
+        self.assertEqual(observed[0][-1], 1)
 
     def test_verification_command_policy_rejects_inline_and_unknown_execution(self):
         rejected = (
@@ -2482,6 +2605,16 @@ class GitWorkspaceManagerCase(unittest.TestCase):
                 self.assertEqual(
                     (request.working_directory / "app.txt").read_text(), "isolated\n"
                 )
+                view = json.loads(request.prompt.rsplit("Task and evidence: ", 1)[1])
+                reference = view["evidence_view"]["package"]
+                manifest_path = request.working_directory / reference["manifest"]
+                self.assertEqual(hashlib.sha256(manifest_path.read_bytes()).hexdigest(), reference["sha256"])
+                manifest = json.loads(manifest_path.read_text())
+                self.assertEqual(manifest["freshness"], "current")
+                for name, attribution in manifest["files"].items():
+                    data = (manifest_path.parent / name).read_bytes()
+                    self.assertEqual(hashlib.sha256(data).hexdigest(), attribution["sha256"])
+                self.assertNotIn("isolated\\n", request.prompt)
                 return {
                     "verdict": "approve",
                     "summary": "reviewed exact isolated result",

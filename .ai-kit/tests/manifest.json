@@ -34,6 +34,7 @@
     "test_orchestration_worktree.py",
     "test_qa_report.py",
     "test_qa_profiles.py",
+    "test_prompt_evidence.py",
     "test_remediation_contract.py",
     "test_remediation_engine.py",
     "test_project_knowledge.py",
