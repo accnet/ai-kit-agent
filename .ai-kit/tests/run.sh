@@ -53,6 +53,7 @@ pass=$((pass+1))
 FIXTURE="$TMP/repo"
 mkdir -p "$FIXTURE/.ai-kit/scripts" "$FIXTURE/.project/demo" "$FIXTURE/features/demo" "$FIXTURE/src" "$FIXTURE/.githooks"
 cp .ai-kit/scripts/next-task.sh .ai-kit/scripts/orchestrate.py .ai-kit/scripts/dag.py .ai-kit/scripts/state.sh .ai-kit/scripts/context-pack.sh .ai-kit/scripts/log-event.sh .ai-kit/scripts/check-gates.sh .ai-kit/scripts/git-qa.sh "$FIXTURE/.ai-kit/scripts/"
+cp .ai-kit/scripts/context_pack.py .ai-kit/scripts/knowledge_retrieval.py .ai-kit/scripts/knowledge-projector.py .ai-kit/scripts/task_state.py "$FIXTURE/.ai-kit/scripts/"
 cp .githooks/pre-commit "$FIXTURE/.githooks/"
 
 printf '%s\n' '# Demo brief' 'Exercise task mechanics.' > "$FIXTURE/features/demo/brief.md"

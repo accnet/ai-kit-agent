@@ -27,6 +27,20 @@ the same sources plus `.project/<feature>/decisions.md` and `.contracts/`
 identity. Full contract: `.project/project-knowledge-index/architecture.md`.
 Layout and policy: `.knowledge-index/README.md`.
 
+`context_pack.py` and harness `memory.py` use the same read-only
+`knowledge_retrieval.py` selector. It verifies each relevant section's live
+identity, hash, and summary before serving an approved index entry. A source
+changed since projection produces a source pointer without its old summary;
+index refresh is never implicit. Unsafe/symlinked sources are excluded. Absent,
+empty, disabled or malformed indexes use live canonical knowledge instead.
+Reads are shared only within one retrieval call, not cached across source changes.
+
+Harness memory excludes stale and nonmatching background before ranking; pinned
+task sources precede background. Its cap counts rendered headers and separators
+as well as content, and reports truncated/excluded/stale sources. Exact task and
+contract criteria remain in the prompt's required task data outside background
+trimming. Native provider instruction discovery still avoids duplicate AGENTS.md.
+
 - **Precedence** (highest first, ties broken by item `id`, never recency
   alone): `.project/<feature>/decisions.md` > `.ai-kit/knowledge/*` >
   `.contracts/*` identity > approved `architecture.md` docs.

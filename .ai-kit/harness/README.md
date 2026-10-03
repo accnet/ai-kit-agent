@@ -565,6 +565,16 @@ path, which is labelled as legacy and never upgrades state implicitly.
 
 ### Compact evidence context
 
+Small tasks with no verification artifacts or review history use `mode: inline`:
+exact task definitions and bounded redacted assertions remain directly readable,
+with unknown automated freshness (`null`) and explicit not-run declarations when
+checks are still pending. No empty inspection package is created. Automated
+review preflight still rejects missing required verification before selecting a
+representation. Larger evidence, artifacts or review history use the guarded
+package described below. Coverage `criterion_ref` is an integer index into
+`acceptance_criteria`, or a path array into `contract_evidence`; exact criterion
+text is not duplicated.
+
 Execution (including QA-owned tasks) and review prompts carry a self-contained
 `evidence_view` instead of serializing full verification records and review
 history. Exact task criteria, contracts, scope, current failures, and findings
@@ -607,6 +617,37 @@ including overhead on empty/tiny tasks. Real retry command counts and gate parit
 are covered by integration tests. Byte savings do not measure provider tokens,
 subscription quota, billing, or cache hits. Stable-prefix ordering offers a cache
 opportunity without assuming caching is enabled.
+
+### Live context and call metrics
+
+The context-pack wrapper parses comma-separated scopes through structured APIs,
+preserving spaces inside file names, expanding globs deterministically, and
+rejecting escaping/symlink scopes. Its knowledge selector is shared with harness
+memory and verifies live section hashes; stale summaries never serve merely
+because an old index labels them approved. Invalid/absent indexes fall back to
+canonical knowledge. Refresh the derived index explicitly when maintaining it.
+Memory filters stale/nonmatching background, prioritizes pinned sources and
+counts rendered headers/separators within `context_budget_chars`.
+
+Planner, execution and review calls retain private metadata in
+`.workspace/qa/call-*/metrics.json`: complete harness prompt bytes/characters,
+declared schema bytes, rendered context size/cap, phase timings, provider-call
+outcome, and available native subprocess/resume/captured-stream byte counts.
+Configured wrappers forward adapter observations; scripted/custom providers
+without native observations report null counts. Raw prompts, outputs and
+environment values are absent. Native IDE tool-output bytes, tokens, quota and
+cache hits remain null when unobservable. Prompt size is the harness-supplied
+prompt, not a claim to include all native discovery/tool context. Elapsed time
+is measured up to metadata persistence; individual phase timings explain the
+observed work and do not certify external billing or model performance.
+
+Within one verification phase, caller/verifier full snapshots are shared to avoid
+duplicate scans; every executed command still has its own post-command snapshot,
+with fallback scans after artifact errors. Provider boundaries and fresh review
+retain full mutation/freshness checks. Each unique canonical artifact is read once
+per package preparation and guarded again after dispatch. Identical rendered
+projections skip writes; stale content is repaired. No passing test result is
+cached across calls, runs, snapshots or worktrees.
 
 - Planning and review use read-only/plan provider modes; Codex implementation
   uses `workspace-write`, Claude implementation uses `acceptEdits`, and no route

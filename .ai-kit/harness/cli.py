@@ -38,12 +38,18 @@ class ConfiguredProvider:
         self.reasoning_effort = dict(config.get("reasoning_effort", {}))
         self.timeout = int(config.get("timeout_seconds", 1200))
         self.output_limit = int(output_limit)
+        self._last_invocation_metrics = None
 
     @property
     def loads_project_instructions(self) -> bool:
         return bool(getattr(self.provider, "loads_project_instructions", False))
 
+    @property
+    def last_invocation_metrics(self):
+        return self._last_invocation_metrics
+
     def invoke(self, request: ProviderRequest) -> Dict[str, Any]:
+        self._last_invocation_metrics = None
         configured = replace(
             request,
             model=request.model or self.model,
@@ -54,7 +60,10 @@ class ConfiguredProvider:
             timeout_seconds=self.timeout,
             max_output_chars=self.output_limit,
         )
-        return self.provider.invoke(configured)
+        try:
+            return self.provider.invoke(configured)
+        finally:
+            self._last_invocation_metrics = getattr(self.provider, "last_invocation_metrics", None)
 
 
 def load_config(root: Path) -> Dict[str, Any]:

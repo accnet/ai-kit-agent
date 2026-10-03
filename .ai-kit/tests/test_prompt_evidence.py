@@ -79,12 +79,15 @@ def benchmark():
                 baseline = compact.rsplit(marker, 1)[0] + marker + json.dumps(old_task, ensure_ascii=False, indent=2)
                 package.validate()
                 full_evidence = json.dumps(evidence_payload(old_task), ensure_ascii=False, indent=2)
-                projected = json.dumps(package.view["evidence_view"], ensure_ascii=False, separators=(",", ":"))
+                projected = json.dumps({"evidence_view": package.view["evidence_view"],
+                                        "evidence": package.view.get("evidence", [])},
+                                       ensure_ascii=False, separators=(",", ":"))
                 calls.append({"phase": phase, "baseline_bytes": len(baseline.encode()),
                               "compact_bytes": len(compact.encode()), "baseline_chars": len(baseline),
                               "compact_chars": len(compact), "baseline_evidence_bytes": len(full_evidence.encode()),
                               "compact_evidence_bytes": len(projected.encode()),
-                              "package_bytes": sum(path.stat().st_size for path in package.roots[0][1].iterdir())})
+                              "package_bytes": sum(path.stat().st_size for path in package.roots[0][1].iterdir())
+                              if package.roots else 0})
             spec = {"shape": shape, "criteria": 3, "calls": ["execution", "execution", "review"],
                     "declared_checks": len(task["verification_commands"]) + len(task.get("verification_profiles", [])),
                     "history_records": len(task["reviews"])}
@@ -179,9 +182,11 @@ class PromptEvidenceCase(unittest.TestCase):
         task["verification_evidence"] = []
         view = compact_task(task)["evidence_view"]
         self.assertEqual(view["freshness"], "unavailable")
-        self.assertEqual(len(view["declarations"]), 3)
-        task["verification_evidence"] = [{"command": task["verification_commands"][0], "passed": True}]
         task.pop("verification_binding")
+        view = compact_task(task)["evidence_view"]
+        self.assertEqual(view["mode"], "inline")
+        self.assertTrue(view["not_run"])
+        task["verification_evidence"] = [{"command": task["verification_commands"][0], "passed": True}]
         package = prepare_evidence(state, task, self.root, self.root)
         self.assertEqual(package.view["evidence_view"]["checks"][0]["attribution"], "unavailable")
         with self.assertRaisesRegex(EvidenceError, "stale or unavailable"):
@@ -319,12 +324,43 @@ class PromptEvidenceCase(unittest.TestCase):
 
     def test_frozen_benchmarks_reduce_complete_prompts_and_repeated_evidence(self):
         result = benchmark()
-        for row in result["rows"][:3]:
+        for row in result["rows"]:
             with self.subTest(shape=row["shape"]):
                 self.assertLess(row["compact_bytes"], row["baseline_bytes"])
                 self.assertLess(row["compact_repeated_evidence_bytes"], row["baseline_repeated_evidence_bytes"])
                 for call in row["calls"]:
                     self.assertLess(call["compact_bytes"], call["baseline_bytes"])
+
+    def test_inline_views_are_bounded_self_contained_and_need_no_artifacts(self):
+        state, task = fixture(self.root)
+        task["verification_commands"] = []
+        task["verification_evidence"] = []
+        task.pop("verification_binding")
+        task["evidence"] = [{"criterion": task["acceptance_criteria"][0], "result": "pass",
+                              "detail": "manual inspection token=fixture-secret", "stdout": "RAW-LOG"}]
+        package = prepare_evidence(state, task, self.root, self.root, review=True)
+        self.assertEqual(package.roots, [])
+        self.assertEqual(package.view["evidence_view"]["mode"], "inline")
+        self.assertIsNone(package.view["evidence_view"]["freshness"])
+        self.assertEqual(package.view["acceptance_criteria"], task["acceptance_criteria"])
+        self.assertNotIn("fixture-secret", json.dumps(package.view))
+        self.assertNotIn("RAW-LOG", json.dumps(package.view))
+        package.validate()
+
+    def test_coverage_references_reconstruct_exact_task_and_contract_criteria(self):
+        state, task = fixture(self.root)
+        task["contract_evidence"] = {"api@1": ["contract remains compatible"]}
+        task["verification_binding"] = verification_binding(state, task, self.root)
+        view = prepare_evidence(state, task, self.root, self.root, review=True).view
+        reconstructed = []
+        for item in view["evidence_view"]["coverage"]:
+            value = view
+            reference = item["criterion_ref"]
+            for part in ["acceptance_criteria", reference] if isinstance(reference, int) else reference:
+                value = value[part]
+            reconstructed.append(value)
+            self.assertNotIn("criterion", item)
+        self.assertEqual(reconstructed, task["acceptance_criteria"] + ["contract remains compatible"])
 
 
 if __name__ == "__main__":

@@ -266,5 +266,8 @@ def render_tasks(state: Dict[str, Any]) -> str:
 
 def write_projections(store: RepositoryStore, state: Dict[str, Any]) -> None:
     directory = store.feature_dir(state["feature"])
-    store.write_text_atomic(directory / "plan.md", render_plan(state))
-    store.write_text_atomic(directory / "tasks.md", render_tasks(state))
+    for name, renderer in (("plan.md", render_plan), ("tasks.md", render_tasks)):
+        path, content = directory / name, renderer(state)
+        if not path.is_symlink() and path.is_file() and path.read_text(encoding="utf-8") == content:
+            continue
+        store.write_text_atomic(path, content)

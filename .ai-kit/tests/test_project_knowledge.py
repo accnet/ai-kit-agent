@@ -50,7 +50,8 @@ def make_repo(tmp: Path) -> Path:
     (root / ".ai-kit/ai.yaml").write_text("kit: ai-kit\n", encoding="utf-8")
     for name in ("decisions.md", "conventions.md", "postmortems.md"):
         (root / ".ai-kit/knowledge" / name).write_text(f"# {name}\n", encoding="utf-8")
-    for src in (BOOTSTRAP, PROJECTOR, CONTEXT_PACK):
+    for src in (BOOTSTRAP, PROJECTOR, CONTEXT_PACK,
+                SCRIPTS / "context_pack.py", SCRIPTS / "knowledge_retrieval.py", SCRIPTS / "task_state.py"):
         shutil.copy2(src, root / ".ai-kit/scripts" / src.name)
     (root / ".ai-kit/scripts/knowledge-bootstrap.sh").chmod(0o755)
     (root / ".ai-kit/scripts/context-pack.sh").chmod(0o755)
@@ -291,6 +292,19 @@ def test_bootstrap_no_forbidden_tokens() -> None:
 # --- context-pack.sh: index-first retrieval, fallback, conflicts, staleness ---
 
 def make_index(root: Path, items: list[dict]) -> None:
+    grouped = {}
+    for item in items:
+        grouped.setdefault(item["source_path"], []).append(item)
+    for original, group in grouped.items():
+        relative = ".project/%s/decisions.md" % Path(original).stem
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n\n".join("## " + item["topic"] + "\n" + item["summary"] for item in group), encoding="utf-8")
+        scanned = {item["topic"]: item for item in kp.scan_markdown_file(root, "project-decisions", path)}
+        for item in group:
+            actual = scanned[item["topic"]]
+            for key in ("id", "source_path", "source_hash", "summary"):
+                item[key] = actual[key]
     (root / ".knowledge-index").mkdir(exist_ok=True)
     (root / ".knowledge-index/index.json").write_text(
         json.dumps({"schema_version": 1, "generated_at": "x", "generator_version": "x", "items": items}),
@@ -316,7 +330,7 @@ def test_relevance_selection_top_k() -> None:
         items.append(approved_item("ai-knowledge:s.md#unrelated", "Unrelated", "Nothing to do with this", ["zzz"]))
         make_index(root, items)
         result = run_context_pack(root, "demo", "T1")
-        shown = result.stdout.count("(source: s.md, status: approved)")
+        shown = result.stdout.count("(source: .project/s/decisions.md, status: approved)")
         record(shown == 5, f"top-K caps relevant candidates at 5 (got {shown})")
         record("more relevant item(s) not shown" in result.stdout, "truncation beyond top-K is reported, not silent")
         record("Unrelated" not in result.stdout, "an item with no keyword overlap is not surfaced")
@@ -355,7 +369,7 @@ def test_stale_never_silently_served() -> None:
                                 ["rollout", "window"], source="a.md", status="stale")]
         make_index(root, items)
         result = run_context_pack(root, "demo", "T1")
-        record("stale: see a.md directly" in result.stdout, "a stale-only match produces an explicit source-fallback line")
+        record("stale: see .project/a/decisions.md directly" in result.stdout, "a stale-only match produces an explicit source-fallback line")
         record("OLD: 2 hours" not in result.stdout, "a stale item's outdated summary is never printed as if it were current")
 
 

@@ -41,7 +41,7 @@ from policy import (  # noqa: E402
     plan_revision_digest,
     task_action_digest,
 )
-from projection import render_plan, render_tasks  # noqa: E402
+from projection import render_plan, render_tasks, write_projections  # noqa: E402
 from providers import (  # noqa: E402
     ClaudeProvider,
     CodexProvider,
@@ -603,6 +603,10 @@ class HarnessCase(unittest.TestCase):
     def test_provider_package_mutation_is_rejected_on_execution_and_review(self):
         self.initialize()
         self.engine.apply_plan("demo", {"summary": "guard package", "tasks": [task(1)]})
+        state = self.store.load_state("demo")
+        state["tasks"][0]["reviews"] = [{"verdict": "revise", "summary": "prior inspection", "findings": []}]
+        self.store.save_state("demo", state)
+        write_projections(self.store, state)
 
         class Mutator:
             name = "mutating-fixture"
@@ -1911,12 +1915,12 @@ class HarnessCase(unittest.TestCase):
         self.assertFalse(working["stale"])
         source.write_text("changed source\n", encoding="utf-8")
         changed = memory.retrieve("demo", "scheduler approval", max_chars=512)
-        working = next(entry for entry in changed["entries"] if entry.get("kind") == "working")
-        self.assertTrue(working["stale"])
+        self.assertFalse(any(entry.get("kind") == "working" for entry in changed["entries"]))
+        self.assertIn("source.txt", changed["stale_sources"])
         source.unlink()
         missing = memory.retrieve("demo", "scheduler approval", max_chars=512)
-        working = next(entry for entry in missing["entries"] if entry.get("kind") == "working")
-        self.assertTrue(working["stale"])
+        self.assertFalse(any(entry.get("kind") == "working" for entry in missing["entries"]))
+        self.assertIn("source.txt", missing["stale_sources"])
 
     def test_native_provider_context_deduplicates_project_instructions(self):
         self.assertTrue(CodexProvider(self.root).loads_project_instructions)

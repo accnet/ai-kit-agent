@@ -17,6 +17,10 @@ required=(
   .ai-kit/harness/cli.py .ai-kit/harness/config.json .ai-kit/tests/run.sh .ai-kit/tests/test_harness.py .ai-kit/tests/test_install.sh
   .ai-kit/tests/manifest.json .ai-kit/tests/test_manifest.py .ai-kit/scripts/consistency.py .ai-kit/tests/test_ai_kit_consistency.py
   .ai-kit/qa-profiles.json .ai-kit/scripts/qa_profiles.py
+  .ai-kit/scripts/context_pack.py .ai-kit/scripts/knowledge_retrieval.py .ai-kit/scripts/knowledge-projector.py
+  .ai-kit/harness/call_metrics.py
+  .ai-kit/modules/testing/stacks.md .ai-kit/modules/testing/javascript.md
+  .ai-kit/modules/testing/node.md .ai-kit/modules/testing/next.md .ai-kit/modules/testing/express.md
   .ai-kit/install/install.sh .ai-kit/install/manifest.txt .ai-kit/install/README.md
   .ai-kit/install/templates/AGENTS.md .ai-kit/install/templates/CLAUDE.md
   .ai-kit/install/templates/pre-commit .ai-kit/install/templates/gates.yml
@@ -36,7 +40,7 @@ while IFS= read -r -d '' module; do
   sed -n '2p' "$module" | grep -qE '^name: [a-z0-9-]+$' || error "$module has invalid name"
   sed -n '3p' "$module" | grep -qE '^description: .+' || error "$module has invalid description"
 done < <(find .ai-kit/modules -type f -name '*.md' ! -name INDEX.md -print0)
-[ "$module_count" -eq 25 ] || error "expected 25 routed modules, found $module_count"
+[ "$module_count" -eq 30 ] || error "expected 30 routed modules/references, found $module_count"
 
 skill_count=0
 expected_skills=(
@@ -139,4 +143,4 @@ if ! python3 .ai-kit/scripts/consistency.py >/dev/null; then
 fi
 
 if [ "$fail" -ne 0 ]; then exit 1; fi
-echo "AI-Kit validation OK: 25 modules, 8 canonical skills, synchronized projections, harness runtime"
+echo "AI-Kit validation OK: 30 modules/references, 8 canonical skills, synchronized projections, harness runtime"

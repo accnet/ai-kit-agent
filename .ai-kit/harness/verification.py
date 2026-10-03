@@ -9,7 +9,7 @@ from pathlib import Path
 import shutil
 import sys
 import tempfile
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from policy import canonical_digest, PolicyError, snapshot_repository, validate_verification_command_paths
 from qa_profiles import QaProfileError, QaProfileResolver
@@ -45,9 +45,13 @@ def _artifact_directory(root: Path) -> Path:
     return Path(tempfile.mkdtemp(prefix="verification-", dir=str(directory)))
 
 
-def run_verification(task: Dict[str, Any], root: Path, artifact_root: Path) -> List[Dict[str, Any]]:
+def run_verification(task: Dict[str, Any], root: Path, artifact_root: Path, *,
+                     initial_snapshot: Optional[Dict[str, str]] = None,
+                     snapshot_data: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """Coalesce duplicate declarations, retaining one evidence record per check."""
     root, artifact_root = root.resolve(), artifact_root.resolve()
+    snapshot_data = {} if snapshot_data is None else snapshot_data
+    snapshot_data.clear()
     try:
         profiles = QaProfileResolver(root).resolve(task["verification_profiles"]) if task.get("verification_profiles") else ()
         timeouts = {}
@@ -75,7 +79,9 @@ def run_verification(task: Dict[str, Any], root: Path, artifact_root: Path) -> L
         return []
 
     try:
-        snapshot = canonical_digest(snapshot_repository(root))
+        before = dict(initial_snapshot) if initial_snapshot is not None else snapshot_repository(root)
+        snapshot_data["before"] = before
+        snapshot = canonical_digest(before)
         run_dir = _artifact_directory(artifact_root)
     except (OSError, PolicyError) as exc:
         return [_failure("environment", str(exc))]
@@ -104,6 +110,7 @@ def run_verification(task: Dict[str, Any], root: Path, artifact_root: Path) -> L
         record = dict(declaration, source_snapshot=snapshot, runtime=runtime,
                       check_digest=digest, reused_in_batch=False)
         try:
+            snapshot_data.pop("after", None)
             if check.get("inline"):
                 validate_verification_command_paths(root, command, task["id"])
             name = "check-%03d" % (len(completed) + 1)
@@ -129,7 +136,8 @@ def run_verification(task: Dict[str, Any], root: Path, artifact_root: Path) -> L
             })
             if result.get("failure_excerpt"):
                 record["failure_excerpt"] = result["failure_excerpt"]
-            after = canonical_digest(snapshot_repository(root))
+            snapshot_data["after"] = snapshot_repository(root)
+            after = canonical_digest(snapshot_data["after"])
             record["source_snapshot_after"] = after
             if after != snapshot:
                 record.update(_failure("repository_mutation", "verification mutated repository files"))

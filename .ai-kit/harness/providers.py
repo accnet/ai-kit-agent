@@ -129,6 +129,7 @@ class SubprocessProvider:
 
     def invoke(self, request: ProviderRequest) -> Dict[str, Any]:
         with tempfile.TemporaryDirectory(prefix="ai-kit-provider-") as directory:
+            self._reset_metrics()
             temp = Path(directory)
             schema_path = temp / "schema.json"
             output_path = temp / "output.json"
@@ -155,6 +156,10 @@ class SubprocessProvider:
         """Run one provider command and return its bounded raw output."""
 
         self._assert_safe_command(command)
+        if not hasattr(self, "last_invocation_metrics"):
+            self._reset_metrics()
+        self.last_invocation_metrics["subprocess_calls"] += 1
+        self.last_invocation_metrics["resume_calls"] = max(0, self.last_invocation_metrics["subprocess_calls"] - 1)
         try:
             result = subprocess.run(
                 command,
@@ -169,7 +174,9 @@ class SubprocessProvider:
         except FileNotFoundError as exc:
             raise ProviderError("provider executable not found: %s" % self.executable) from exc
         except subprocess.TimeoutExpired as exc:
+            self._count_streams(exc.stdout, exc.stderr)
             raise ProviderError("provider timed out after %d seconds" % request.timeout_seconds) from exc
+        self._count_streams(result.stdout, result.stderr)
         if result.returncode != 0:
             detail = result.stderr.strip()[-2000:]
             raise ProviderError("provider exited %d: %s" % (result.returncode, detail or "no error output"))
@@ -177,6 +184,15 @@ class SubprocessProvider:
         if len(raw) > request.max_output_chars:
             raise ProviderError("provider output exceeds configured limit")
         return raw
+
+    def _reset_metrics(self):
+        self.last_invocation_metrics = {"subprocess_calls": 0, "resume_calls": 0,
+                                        "stdout_bytes": 0, "stderr_bytes": 0}
+
+    def _count_streams(self, stdout, stderr):
+        for name, value in (("stdout_bytes", stdout), ("stderr_bytes", stderr)):
+            self.last_invocation_metrics[name] += len(value if isinstance(value, bytes)
+                                                      else (value or "").encode("utf-8"))
 
     def extract_output(self, stdout: str, output_path: Path) -> str:
         return output_path.read_text(encoding="utf-8") if output_path.is_file() else stdout
@@ -424,6 +440,7 @@ class GrokProvider(SubprocessProvider):
             schema_path = temp / "schema.json"
             output_path = temp / "output.json"
             prompt_path = temp / "prompt.md"
+            self._reset_metrics()
             schema_path.write_text(json.dumps(request.schema), encoding="utf-8")
             prompt_path.write_text(request.prompt, encoding="utf-8")
 

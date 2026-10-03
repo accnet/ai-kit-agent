@@ -31,5 +31,6 @@ Route from this table — read a module's body only when this index says it appl
 | Task owner = frontend | frontend.md |
 | Task touches schema / owner = database | database.md |
 | Writing tests (any task) | testing.md |
+| Selecting a stack-specific runner or application test | testing.md Stack References; load only the matching language/framework reference |
 
 Shortcut: `.ai-kit/scripts/context-pack.sh <feature> T<n>` emits the deterministic tier-1 context pack for a task (task line, criteria, files: contents, brief, knowledge hits) — start there, then load modules per this table.

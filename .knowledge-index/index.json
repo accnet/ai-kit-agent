@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-04T00:32:49Z",
+  "generated_at": "2026-10-03T18:59:51Z",
   "generator_version": "1.0.0",
   "items": [
     {
@@ -774,9 +774,9 @@
     {
       "id": "ai-knowledge:.ai-kit/knowledge/conventions.md#full-qa-reporting-is-compact-but-coverage-preserving",
       "topic": "Full QA reporting is compact but coverage-preserving",
-      "summary": "## Full QA reporting is compact but coverage-preserving - Rule: Use `.ai-kit/scripts/qa-report.sh --profile ai-kit|theme|browser|all` (default `all`) to report existing QA commands. `all` keeps their fixed order, runs every selected command after a failure, and exits non-zero if any failed; reject unknown or duplicate profiles. - Because: Compact local artifacts reduce agent-context tokens without",
+      "summary": "## Full QA reporting is compact but coverage-preserving - Rule: Use `.ai-kit/scripts/qa-report.sh --profile ai-kit|theme|browser|all` with an explicit profile to report existing QA commands. `all` keeps their fixed order, runs every selected command after a failure, and exits non-zero if any failed; reject missing, unknown, or duplicate profiles. Select `ai-kit` for kit-only regression and preserv",
       "source_path": ".ai-kit/knowledge/conventions.md",
-      "source_hash": "bbdc225ed4954c518d1ef57e7b6d753afe0f8e2500a560379e35cbf9939bf15f",
+      "source_hash": "96dddc8c90c7e50d61667e7834dfc4c88f9dbac42d5dcaeae8158950b6519a90",
       "status": "approved",
       "superseded_by": null,
       "precedence": 2,
@@ -792,11 +792,11 @@
         "profile",
         "theme",
         "browser",
-        "default"
+        "with"
       ],
       "budget": {
         "summary_chars": 400,
-        "source_bytes": 517
+        "source_bytes": 702
       }
     },
     {
@@ -1470,6 +1470,34 @@
       }
     },
     {
+      "id": "ai-knowledge:.ai-kit/knowledge/postmortems.md#2026-09-04-crlf-working-tree-files-flagged-as-trailing-whitespace-under-git-bash",
+      "topic": "2026-09-04 CRLF working-tree files flagged as \"trailing whitespace\" under git-bash",
+      "summary": "## 2026-09-04 CRLF working-tree files flagged as \"trailing whitespace\" under git-bash - Impact: `git-qa.sh check worktree` (and `doctor.sh --full`) failed with `git diff --check` reporting \"trailing whitespace\" on every line of `harness/engine.py` and `harness/models.py`, even though a byte-level check showed zero trailing spaces. - Root cause: `core.autocrlf=true` with no `.gitattributes`; the tw",
+      "source_path": ".ai-kit/knowledge/postmortems.md",
+      "source_hash": "ca009fedf8346ce4f8448117a9c5214b6ba78799f8805ff60d81ce7d403ec711",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 2,
+      "keywords": [
+        "2026",
+        "crlf",
+        "working",
+        "tree",
+        "files",
+        "flagged",
+        "trailing",
+        "whitespace",
+        "under",
+        "bash",
+        "impact",
+        "check"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1109
+      }
+    },
+    {
       "id": "ai-knowledge:.ai-kit/knowledge/postmortems.md#postmortems",
       "topic": "Postmortems",
       "summary": "# Postmortems What went wrong and what it taught us — so the same mistake isn't paid for twice. Newest first. Format: ```",
@@ -2108,6 +2136,143 @@
       "budget": {
         "summary_chars": 400,
         "source_bytes": 476
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-efficiency-fixes/architecture.md#context-ownership",
+      "topic": "Context ownership",
+      "summary": "## Context ownership context_pack.py replaces shell text splitting with structured task-state/scopes, safe glob/path handling and exact criterion extraction. context-pack.sh stays the public wrapper with the same feature/task arguments. knowledge_retrieval.py is a shared read-only reader used by the pack and memory.py. It loads the existing projector through its Python API, rescans each relevant s",
+      "source_path": ".project/ai-kit-efficiency-fixes/architecture.md",
+      "source_hash": "84c99c9313ca3197396d92da672d8cc0819458dc756bd3ae6178c971283bc917",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "context",
+        "ownership",
+        "pack",
+        "replaces",
+        "shell",
+        "text",
+        "splitting",
+        "with",
+        "structured",
+        "task",
+        "state",
+        "scopes"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1119
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-efficiency-fixes/architecture.md#efficiency-boundaries",
+      "topic": "Efficiency boundaries",
+      "summary": "# Efficiency boundaries Status: ready for implementation; active-agent assessment, 2026-10-04",
+      "source_path": ".project/ai-kit-efficiency-fixes/architecture.md",
+      "source_hash": "ebfcb48d2662115dde3e88d0f02f8e368af82e87f14f62370bf1aef604ebd9f9",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "efficiency",
+        "boundaries",
+        "status",
+        "ready",
+        "implementation",
+        "active",
+        "agent",
+        "assessment",
+        "2026"
+      ],
+      "budget": {
+        "summary_chars": 93,
+        "source_bytes": 96
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-efficiency-fixes/architecture.md#evidence-and-i-o-ownership",
+      "topic": "Evidence and I/O ownership",
+      "summary": "## Evidence and I/O ownership Artifact-free/history-free small tasks carry exact task definitions and bounded inline assertions with explicit unavailable automated evidence. Existing automated-review preflight runs before representation selection. When artifacts, large manual detail or findings require inspection, retain private guarded packages. Coverage points into exact task/contract criteria i",
+      "source_path": ".project/ai-kit-efficiency-fixes/architecture.md",
+      "source_hash": "15f8ebdb96effc780ad0406965766036a0d2d57fbf614481da624ebdf4b40ac5",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "evidence",
+        "ownership",
+        "artifact",
+        "free",
+        "history",
+        "small",
+        "tasks",
+        "carry",
+        "exact",
+        "task",
+        "definitions",
+        "bounded"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1117
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-efficiency-fixes/architecture.md#metrics-ownership",
+      "topic": "Metrics ownership",
+      "summary": "## Metrics ownership call_metrics.py persists coordinator-private metadata under the existing QA artifact namespace. Engine call sites collect complete prompt, schema and context sizes and phase durations; native adapters count actual subprocesses/resumes and captured stream bytes, with wrapper forwarding. All planner/execution/review calls, including errors, produce terminal status metadata. Scri",
+      "source_path": ".project/ai-kit-efficiency-fixes/architecture.md",
+      "source_hash": "d34b2c5d538476e1b7a21d9b38d2affcfdf69a374bd71f2acebb80ca127c31d3",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "metrics",
+        "ownership",
+        "call",
+        "persists",
+        "coordinator",
+        "private",
+        "metadata",
+        "under",
+        "existing",
+        "artifact",
+        "namespace",
+        "engine"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 661
+      }
+    },
+    {
+      "id": "architecture:.project/ai-kit-efficiency-fixes/architecture.md#rollout-tests-and-alternatives",
+      "topic": "Rollout, tests and alternatives",
+      "summary": "## Rollout, tests and alternatives T2 owns scripts/knowledge; T3 memory; T4 engine/provider metrics; T5 evidence; T6 I/O; T7 docs/index. Scopes overlap only sequentially. Freeze the prior six benchmark shapes and compare complete prompts to full-task builders; additionally prove inline views remove empty/tiny overhead and instrument actual I/O counts. Use offline provider fixtures and WSL/Python 3",
+      "source_path": ".project/ai-kit-efficiency-fixes/architecture.md",
+      "source_hash": "a9c7ba48e9b73ac34eeb98daea471e15e80a052347e3b1a1d9cd9388c4467881",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "rollout",
+        "tests",
+        "alternatives",
+        "owns",
+        "scripts",
+        "knowledge",
+        "memory",
+        "engine",
+        "provider",
+        "metrics",
+        "evidence",
+        "docs"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 965
       }
     },
     {
@@ -4495,6 +4660,174 @@
       "budget": {
         "summary_chars": 400,
         "source_bytes": 593
+      }
+    },
+    {
+      "id": "architecture:.project/test-quota-efficiency-fix-1/architecture.md#alternatives-rollback-and-ownership",
+      "topic": "Alternatives, rollback, and ownership",
+      "summary": "## Alternatives, rollback, and ownership Digest-only deltas were rejected because fresh calls have no prior evidence. Coordinator absolute paths were rejected because isolated providers cannot be assumed to read them. Worktree Git-ignore edits were rejected because a temporary projection can be deleted after inspection. A second canonical evidence store was rejected because it would drift from exi",
+      "source_path": ".project/test-quota-efficiency-fix-1/architecture.md",
+      "source_hash": "c35cea5d59e39f337727bb50f376a16aaabc7a0015c5d779513e957eadbe5c10",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "alternatives",
+        "rollback",
+        "ownership",
+        "digest",
+        "only",
+        "deltas",
+        "were",
+        "rejected",
+        "because",
+        "fresh",
+        "calls",
+        "have"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 741
+      }
+    },
+    {
+      "id": "architecture:.project/test-quota-efficiency-fix-1/architecture.md#boundaries-and-data-flow",
+      "topic": "Boundaries and data flow",
+      "summary": "## Boundaries and data flow Canonical task/state and verification.py run.json remain authoritative. prompt_evidence.py projects these records, validates artifact hashes, and prepares a private local package. engine.py prepares it before ProviderRequest construction and mutation baselines, dispatches an unchanged provider/result schema, validates package integrity after invocation (also on exceptio",
+      "source_path": ".project/test-quota-efficiency-fix-1/architecture.md",
+      "source_hash": "4b414031369d0eb2f154564c9274642050212568e19eed60b8467e8598a3b72a",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "boundaries",
+        "data",
+        "flow",
+        "canonical",
+        "task",
+        "state",
+        "verification",
+        "json",
+        "remain",
+        "authoritative",
+        "prompt",
+        "evidence"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1436
+      }
+    },
+    {
+      "id": "architecture:.project/test-quota-efficiency-fix-1/architecture.md#compact-evidence-architecture",
+      "topic": "Compact evidence architecture",
+      "summary": "# Compact evidence architecture Status: ready for implementation, 2026-10-04; active-agent assessment Baseline barrier: test-quota-efficiency:T6 is completed (DAG verified).",
+      "source_path": ".project/test-quota-efficiency-fix-1/architecture.md",
+      "source_hash": "a64576bdc3cb7c4b08bac6fe2341d33376718e4ca89d9b8b650e79bba4d7303e",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "compact",
+        "evidence",
+        "architecture",
+        "status",
+        "ready",
+        "implementation",
+        "2026",
+        "active",
+        "agent",
+        "assessment",
+        "baseline",
+        "barrier"
+      ],
+      "budget": {
+        "summary_chars": 173,
+        "source_bytes": 176
+      }
+    },
+    {
+      "id": "architecture:.project/test-quota-efficiency-fix-1/architecture.md#freshness-and-retries",
+      "topic": "Freshness and retries",
+      "summary": "## Freshness and retries engine records an additive internal verification_binding after each actual verification: plan revision digest, evidence digest, source digest. Source digest uses snapshot_repository excluding .project/ (coordinator state only); other source/requirement files remain included. Verification's original full snapshot is preserved in evidence. Git staging does not change content",
+      "source_path": ".project/test-quota-efficiency-fix-1/architecture.md",
+      "source_hash": "dfe813deb73f8925f2ca63feed6ac35aa0357a67c6e734a95258ae49c8dc6da6",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "freshness",
+        "retries",
+        "engine",
+        "records",
+        "additive",
+        "internal",
+        "verification",
+        "binding",
+        "after",
+        "each",
+        "actual",
+        "plan"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1129
+      }
+    },
+    {
+      "id": "architecture:.project/test-quota-efficiency-fix-1/architecture.md#frozen-benchmark-shapes-and-baseline",
+      "topic": "Frozen benchmark shapes and baseline",
+      "summary": "## Frozen benchmark shapes and baseline Before implementation, freeze these representative shapes in paired tests: 1. Three acceptance criteria, three distinct Python checks, one run, each with standard runtime/snapshot/artifact attribution. 2. Three criteria, three duplicate declarations (inline/profile), one executed check; retain all declaration references and reported/manual evidence. 3. Three",
+      "source_path": ".project/test-quota-efficiency-fix-1/architecture.md",
+      "source_hash": "20bf10c038d7980e36af5edff5ff6f4ffcbca54475cbc57d2456fd8a891f8542",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "frozen",
+        "benchmark",
+        "shapes",
+        "baseline",
+        "before",
+        "implementation",
+        "freeze",
+        "these",
+        "representative",
+        "paired",
+        "tests",
+        "three"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1474
+      }
+    },
+    {
+      "id": "architecture:.project/test-quota-efficiency-fix-1/architecture.md#internal-representation",
+      "topic": "Internal representation",
+      "summary": "## Internal representation Retain all task fields except the known heavy evidence, verification_evidence, reviews, and verification_binding fields, which have explicit projections. Unknown/new task fields are preserved, not silently dropped. Keep exact criteria, contracts, file scope, verification declarations, blockers, remediation fields, current failure, attempt count, execution summary, and ow",
+      "source_path": ".project/test-quota-efficiency-fix-1/architecture.md",
+      "source_hash": "3d9dde44c4e7f4b8101c3bda66a69205bd603eab21b4983b89788b227085ca61",
+      "status": "approved",
+      "superseded_by": null,
+      "precedence": 4,
+      "keywords": [
+        "internal",
+        "representation",
+        "retain",
+        "task",
+        "fields",
+        "except",
+        "known",
+        "heavy",
+        "evidence",
+        "verification",
+        "reviews",
+        "binding"
+      ],
+      "budget": {
+        "summary_chars": 400,
+        "source_bytes": 1997
       }
     }
   ]

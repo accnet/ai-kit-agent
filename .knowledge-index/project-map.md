@@ -20,8 +20,8 @@ hand-edit. Not a copy of full source files. Canonical sources remain
 | `.project` |  |
 | `AGENTS.md` |  |
 | `CLAUDE.md` |  |
-| `README.md` |  |
 | `features` |  |
+| `README.md` |  |
 | `tests` |  |
 
 ## Commands (from README.md)

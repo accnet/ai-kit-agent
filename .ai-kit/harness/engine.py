@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -51,6 +52,7 @@ except ImportError:
 from providers import ProviderError, ProviderRequest
 from verification import run_verification
 from prompt_evidence import EvidenceError, compact_task, prepare_evidence, verification_binding
+from call_metrics import CallMetrics
 from schemas import EXECUTION_SCHEMA, PLAN_SCHEMA, REVIEW_SCHEMA
 from store import RepositoryStore, StoreError
 from worktrees import GitWorkspaceManager, PatchArtifact, WorkspaceError, WorkspaceRecord
@@ -154,18 +156,13 @@ class HarnessEngine:
 
     def plan_with_provider(self, feature: str, provider: Any, *, actor: str = "planner", replan: bool = False) -> Dict[str, Any]:
         state = self.store.load_state(feature)
-        context = self.memory.retrieve(
-            feature,
-            state["goal"],
-            max_chars=self.context_budget,
-            include_project_instructions=not self._provider_loads_project_instructions(provider),
-        )
+        context, metrics = self._retrieve_call_context(state, provider, "planner", state["goal"])
         request = ProviderRequest(
             "planner",
-            self._plan_prompt(state, self.memory.render_context(context), replan=replan),
+            self._plan_prompt(state, context, replan=replan),
             PLAN_SCHEMA,
         )
-        result = provider.invoke(request)
+        result = self._invoke_with_evidence(provider, request, None, metrics)
         return self.apply_plan(feature, result, provider_name=provider.name, actor=actor, replan=replan)
 
     def apply_plan(
@@ -888,18 +885,15 @@ class HarnessEngine:
             if self.workspace_manager is not None and workspace_record is not None
             else self.store.root
         )
-        context = self.memory.retrieve(
-            feature,
-            "%s %s" % (task["title"], task["description"]),
-            max_chars=self.context_budget,
-            include_project_instructions=not self._provider_loads_project_instructions(provider),
+        context, metrics = self._retrieve_call_context(
+            state, provider, "implementer", "%s %s" % (task["title"], task["description"]), task["id"]
         )
         package = self._prepare_evidence_for_call(
-            state, task, execution_root, provider, actor, workspace_record
+            state, task, execution_root, provider, actor, workspace_record, metrics=metrics
         )
         request = ProviderRequest(
             "implementer",
-            self._execution_prompt(state, task, self.memory.render_context(context),
+            self._execution_prompt(state, task, context,
                                    evidence_view=package.view),
             EXECUTION_SCHEMA,
             working_directory=execution_root if workspace_record is not None else None,
@@ -910,7 +904,7 @@ class HarnessEngine:
             snapshot_repository(self.store.root) if workspace_record is not None else before
         )
         try:
-            result = self._invoke_with_evidence(provider, request, package)
+            result = self._invoke_with_evidence(provider, request, package, metrics)
         except (ProviderError, EvidenceError) as exc:
             actual = changed_paths(before, snapshot_repository(execution_root))
             main_actual = (
@@ -1006,9 +1000,17 @@ class HarnessEngine:
             task.get("verification_commands") or task.get("verification_profiles")
         ):
             verification_before = snapshot_repository(execution_root)
-            verification_results = self._run_verification_commands(task, root=execution_root)
+            verification_snapshots = {}
+            with metrics.phase("verification"):
+                verification_results = self._run_verification_commands(
+                    task, root=execution_root, initial_snapshot=verification_before,
+                    snapshot_data=verification_snapshots)
+            metrics.data["verification_checks"] = len(verification_results)
+            metrics.data["verification_passed"] = bool(verification_results) and all(
+                item["passed"] for item in verification_results)
             verification_changed = changed_paths(
-                verification_before, snapshot_repository(execution_root)
+                verification_before, verification_snapshots["after"]
+                if "after" in verification_snapshots else snapshot_repository(execution_root)
             )
             if verification_changed:
                 verification_failure = "verification mutated repository files: " + ", ".join(
@@ -1057,6 +1059,8 @@ class HarnessEngine:
                     validate_success(task, result)
                     if verification_failure:
                         raise PolicyError(verification_failure)
+                    metrics.data["gate_passed"] = True
+                    metrics.write()
                 except PolicyError as exc:
                     task["verification_evidence"] = verification_results
                     task["verification_binding"] = binding
@@ -1068,6 +1072,8 @@ class HarnessEngine:
                     self._fail_in_state(state, task, str(exc))
                     self._provider_history(state, provider.name, "implementer", task["id"], "rejected")
                     self._commit(state, "gate_fail", actor, task=task["id"], detail=str(exc))
+                    metrics.data["gate_passed"] = False
+                    metrics.write()
                     raise
                 task["evidence"] = result["evidence"]
                 task["verification_evidence"] = verification_results
@@ -1163,21 +1169,18 @@ class HarnessEngine:
             raise PolicyError(
                 "independent review requires a provider different from %s" % provider.name
             )
-        context = self.memory.retrieve(
-            feature,
-            "%s review evidence" % task["title"],
-            max_chars=self.context_budget,
-            include_project_instructions=not self._provider_loads_project_instructions(provider),
+        context, metrics = self._retrieve_call_context(
+            state, provider, "reviewer", "%s review evidence" % task["title"], task_id
         )
         package = self._prepare_evidence_for_call(
-            state, task, review_root, provider, actor, workspace_record, review=True
+            state, task, review_root, provider, actor, workspace_record, review=True, metrics=metrics
         )
         request = ProviderRequest(
             "reviewer",
             self._review_prompt(
                 state,
                 task,
-                self.memory.render_context(context),
+                context,
                 review_policy=effective_review_policy,
                 evidence_view=package.view,
             ),
@@ -1190,7 +1193,7 @@ class HarnessEngine:
             snapshot_repository(self.store.root) if workspace_record is not None else before
         )
         try:
-            result = self._invoke_with_evidence(provider, request, package)
+            result = self._invoke_with_evidence(provider, request, package, metrics)
         except Exception as exc:
             actual_changed = changed_paths(before, snapshot_repository(review_root))
             main_changed = (
@@ -1281,6 +1284,8 @@ class HarnessEngine:
             missing_checks = [
                 criterion for criterion in task.get("acceptance_criteria", []) if criterion not in checked
             ]
+            metrics.data["gate_passed"] = verdict == "approve" and not severe and not missing_checks
+            metrics.write()
             if verdict == "approve" and severe:
                 raise PolicyError("review cannot approve with major or blocker findings")
             if verdict == "approve" and missing_checks:
@@ -1462,11 +1467,14 @@ class HarnessEngine:
             self._commit(state, event, actor, task=task_id, detail=detail)
 
     def _prepare_evidence_for_call(
-        self, state, task, root, provider, actor, workspace_record, *, review=False
+        self, state, task, root, provider, actor, workspace_record, *, review=False, metrics=None
     ):
         try:
-            return prepare_evidence(state, task, self.store.root, root, review=review)
+            with metrics.phase("evidence_prepare") if metrics else nullcontext():
+                return prepare_evidence(state, task, self.store.root, root, review=review)
         except EvidenceError as exc:
+            if metrics:
+                metrics.data.update(status="rejected", error_kind=type(exc).__name__)
             phase, cleanup_error = self._discard_workspace(workspace_record)
             detail = str(exc) + ("; " + cleanup_error if cleanup_error else "")
             if review:
@@ -1479,15 +1487,54 @@ class HarnessEngine:
                     state["feature"], task["id"], actor, detail, provider.name,
                     workspace_phase=phase
                 )
+            if metrics:
+                metrics.write()
             raise
 
-    @staticmethod
-    def _invoke_with_evidence(provider, request, package):
+    def _retrieve_call_context(self, state, provider, role, query, task=None):
+        metrics = CallMetrics(self.store.root, state["feature"], role, task)
         try:
-            return provider.invoke(request)
+            with metrics.phase("context_retrieval"):
+                context = self.memory.retrieve(
+                    state["feature"], query, max_chars=self.context_budget,
+                    include_project_instructions=not self._provider_loads_project_instructions(provider))
+                rendered = self.memory.render_context(context)
+            metrics.data.update(context_chars=len(rendered), context_bytes=len(rendered.encode("utf-8")),
+                                context_budget_chars=self.context_budget,
+                                truncated_sources=len(context["truncated_sources"]),
+                                stale_sources=len(context.get("stale_sources", [])))
+            return rendered, metrics
+        except Exception as exc:
+            metrics.data.update(status="failed", error_kind=type(exc).__name__)
+            metrics.write()
+            raise
+
+    def _invoke_with_evidence(self, provider, request, package, metrics):
+        metrics.request(request)
+        try:
+            metrics.data["provider_calls"] += 1
+            with metrics.phase("provider"):
+                result = provider.invoke(request)
+            metrics.data["status"] = "success"
+            outcome = result.get("outcome", result.get("verdict"))
+            if outcome in {"success", "failed", "needs_replan", "approve", "revise", "block"}:
+                metrics.data["provider_outcome"] = outcome
+            return result
+        except Exception as exc:
+            metrics.data.update(status="failed", error_kind=type(exc).__name__)
+            raise
         finally:
-            package.validate()
-            package.cleanup_projection()
+            try:
+                if package:
+                    with metrics.phase("artifact_guard"):
+                        package.validate()
+                        package.cleanup_projection()
+            except Exception as exc:
+                metrics.data.update(status="rejected", error_kind=type(exc).__name__)
+                raise
+            finally:
+                metrics.provider(provider)
+                metrics.write()
 
     def _discard_workspace(
         self, record: Optional[WorkspaceRecord]
@@ -1591,9 +1638,11 @@ class HarnessEngine:
             task["feature_dependency_block"] = reason
 
     def _run_verification_commands(
-        self, task: Dict[str, Any], *, root: Optional[Path] = None
+        self, task: Dict[str, Any], *, root: Optional[Path] = None,
+        initial_snapshot=None, snapshot_data=None
     ) -> List[Dict[str, Any]]:
-        return run_verification(task, Path(root or self.store.root), self.store.root)
+        return run_verification(task, Path(root or self.store.root), self.store.root,
+                                initial_snapshot=initial_snapshot, snapshot_data=snapshot_data)
 
     def _merge_contract_state(
         self,

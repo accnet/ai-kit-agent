@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import re
+import sys
 import uuid
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from models import MEMORY_KINDS, utc_now
 from store import RepositoryStore, StoreError
+
+_scripts = str(Path(__file__).resolve().parents[1] / "scripts")
+if _scripts not in sys.path:
+    sys.path.append(_scripts)
+from knowledge_retrieval import retrieve_knowledge
 
 
 TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9_.-]*", re.IGNORECASE)
@@ -18,7 +25,6 @@ PINNED_SOURCES = (
     "features/{feature}/brief.md",
     ".project/{feature}/architecture.md",
     ".project/{feature}/decisions.md",
-    ".ai-kit/knowledge/conventions.md",
 )
 
 
@@ -97,6 +103,8 @@ class MemoryStore:
             raise MemoryError("unknown memory kind in retrieval filter")
 
         query_tokens = _tokens(query)
+        read_cache = {}
+        stale_sources = set()
         candidates: List[Tuple[int, int, Dict[str, Any]]] = []
         records = self.store.read_records(feature, "memory.jsonl")
         for index, record in enumerate(records):
@@ -105,6 +113,11 @@ class MemoryStore:
             content = str(record.get("content", ""))
             searchable = content + " " + " ".join(record.get("tags", []))
             overlap = len(query_tokens & _tokens(searchable))
+            if query_tokens and not overlap:
+                continue
+            if self._is_stale(record.get("provenance", {}), read_cache):
+                stale_sources.add(str(record.get("provenance", {}).get("ref", "unknown")))
+                continue
             importance = int(record.get("importance", 1))
             kind_bonus = {"working": 3, "episodic": 2, "semantic": 1}.get(record.get("kind"), 0)
             score = overlap * 100 + importance * 10 + kind_bonus
@@ -112,41 +125,46 @@ class MemoryStore:
                 score += index
             enriched = dict(record)
             enriched["score"] = score
-            enriched["stale"] = self._is_stale(record.get("provenance", {}))
+            enriched["stale"] = False
             candidates.append((score, index, enriched))
 
         candidates.sort(key=lambda item: (-item[0], -item[1], str(item[2].get("id", ""))))
         entries: List[Dict[str, Any]] = []
         used = 0
-        deferred_sources: List[Dict[str, Any]] = []
         excluded_sources: List[str] = []
 
         if include_project_sources:
-            source_budget = max(128, int(max_chars * 0.55))
             for template in PINNED_SOURCES:
                 relative = template.format(feature=feature)
                 if relative == "AGENTS.md" and not include_project_instructions:
                     excluded_sources.append(relative)
                     continue
-                entry = self._file_entry(relative)
+                entry = self._file_entry(relative, read_cache)
                 if entry is None:
                     continue
-                content_size = len(str(entry.get("content", "")))
-                if content_size <= source_budget - used:
-                    entries.append(entry)
-                    used += content_size
-                else:
-                    deferred_sources.append(entry)
+                before = used
+                used = self._bounded_add(entries, entry, used, max_chars)
+                if before == used:
+                    excluded_sources.append(relative)
+            knowledge = retrieve_knowledge(self.store.root, query, read_cache=read_cache)
+            for item in knowledge["entries"]:
+                if item["source_path"] in {entry.get("provenance", {}).get("ref") for entry in entries}:
+                    continue
+                entry = {"id": item["id"], "kind": "knowledge", "stale": False,
+                         "content": ("CONFLICT: " if item["conflict"] else "") + item["summary"],
+                         "provenance": {"ref": item["source_path"], "hash": "sha256:" + item["source_hash"]}}
+                used = self._bounded_add(entries, entry, used, max_chars)
+            stale_sources.update(item["source_path"] for item in knowledge["pointers"])
+
+        for relative in sorted(stale_sources):
+            entry = {"kind": "source-pointer", "stale": True,
+                     "content": "stale: see %s directly; old summary excluded" % relative,
+                     "provenance": {"ref": relative}}
+            used = self._bounded_add(entries, entry, used, max_chars)
 
         if used < max_chars:
             for _, _, record in candidates[:limit]:
                 used = self._bounded_add(entries, record, used, max_chars)
-                if used >= max_chars:
-                    break
-
-        if used < max_chars:
-            for entry in deferred_sources:
-                used = self._bounded_add(entries, entry, used, max_chars)
                 if used >= max_chars:
                     break
 
@@ -162,18 +180,14 @@ class MemoryStore:
             "entries": entries,
             "excluded_sources": excluded_sources,
             "truncated_sources": truncated_sources,
+            "stale_sources": sorted(stale_sources),
         }
 
     def render_context(self, result: Dict[str, Any]) -> str:
         blocks: List[str] = []
         for entry in result.get("entries", []):
             provenance = entry.get("provenance", {})
-            header = "[%s | %s | stale=%s]" % (
-                entry.get("kind", "source"),
-                provenance.get("ref", "unknown"),
-                str(bool(entry.get("stale", False))).lower(),
-            )
-            blocks.append(header + "\n" + str(entry.get("content", "")))
+            blocks.append(self._render_entry(entry))
         return "\n\n".join(blocks)
 
     def _provenance(self, source: Optional[str], content: str) -> Dict[str, str]:
@@ -191,7 +205,7 @@ class MemoryStore:
             "hash": _hash_bytes(path.read_bytes()),
         }
 
-    def _is_stale(self, provenance: Dict[str, Any]) -> bool:
+    def _is_stale(self, provenance: Dict[str, Any], read_cache=None) -> bool:
         if provenance.get("type") != "file":
             return False
         relative = Path(str(provenance.get("ref", "")))
@@ -203,13 +217,22 @@ class MemoryStore:
             return True
         if not path.is_file():
             return True
-        return _hash_bytes(path.read_bytes()) != provenance.get("hash")
+        read_cache = {} if read_cache is None else read_cache
+        key = relative.as_posix()
+        if key not in read_cache:
+            read_cache[key] = path.read_bytes()
+        return _hash_bytes(read_cache[key]) != provenance.get("hash")
 
-    def _file_entry(self, relative: str) -> Optional[Dict[str, Any]]:
+    def _file_entry(self, relative: str, read_cache=None) -> Optional[Dict[str, Any]]:
         path = self.store._inside(self.store.root / relative)
         if not path.is_file():
             return None
-        content = path.read_text(encoding="utf-8", errors="replace")
+        read_cache = {} if read_cache is None else read_cache
+        if relative not in read_cache:
+            read_cache[relative] = path.read_bytes()
+        raw = read_cache[relative]
+        with io.TextIOWrapper(io.BytesIO(raw), encoding="utf-8", errors="replace", newline=None) as reader:
+            content = reader.read()
         return {
             "id": "source:" + relative,
             "kind": "source",
@@ -220,15 +243,24 @@ class MemoryStore:
             "provenance": {
                 "type": "file",
                 "ref": relative,
-                "hash": _hash_bytes(path.read_bytes()),
+                "hash": _hash_bytes(raw),
             },
         }
+
+    @staticmethod
+    def _render_entry(entry):
+        header = "[%s | %s | stale=%s]" % (
+            entry.get("kind", "source"), entry.get("provenance", {}).get("ref", "unknown"),
+            str(bool(entry.get("stale", False))).lower())
+        return header + "\n" + str(entry.get("content", ""))
 
     @staticmethod
     def _bounded_add(
         entries: List[Dict[str, Any]], entry: Dict[str, Any], used: int, max_chars: int
     ) -> int:
-        remaining = max_chars - used
+        separator = 2 if entries else 0
+        header_size = len(MemoryStore._render_entry(dict(entry, content="")))
+        remaining = max_chars - used - separator - header_size
         if remaining <= 0:
             return used
         content = str(entry.get("content", ""))
@@ -241,4 +273,4 @@ class MemoryStore:
             selected["content"] = content[: remaining - 20].rstrip() + "\n[context truncated]"
             selected["truncated"] = True
         entries.append(selected)
-        return used + len(str(selected["content"]))
+        return used + separator + len(MemoryStore._render_entry(selected))

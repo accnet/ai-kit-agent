@@ -38,6 +38,10 @@
     "test_remediation_contract.py",
     "test_remediation_engine.py",
     "test_project_knowledge.py",
+    "test_context_pack.py",
+    "test_context_retrieval.py",
+    "test_call_metrics.py",
+    "test_pipeline_efficiency.py",
     "test_structured_input.py"
   ]
 }

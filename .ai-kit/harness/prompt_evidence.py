@@ -32,13 +32,18 @@ def source_identity(root: Path) -> str:
 
 
 def verification_binding(state: Dict[str, Any], task: Dict[str, Any], root: Path,
-                         artifact_root: Optional[Path] = None) -> Dict[str, Any]:
+                         artifact_root: Optional[Path] = None, *, manifest_bytes=None) -> Dict[str, Any]:
     manifests = {record["artifact_manifest"] for record in task.get("verification_evidence", [])
                  if record.get("artifact_manifest")}
+    manifest_bytes = {} if manifest_bytes is None else manifest_bytes
+    for relative in sorted(manifests):
+        _safe_path(artifact_root or root, relative)
+        if relative not in manifest_bytes:
+            manifest_bytes[relative] = _read(artifact_root or root, relative)
     return {"source": source_identity(root), "plan": plan_revision_digest(state),
             "evidence": canonical_digest(task.get("verification_evidence", [])),
             "attempt": task.get("attempts", 0), "run": state.get("run", {}).get("id"),
-            "manifests": {relative: _sha(_read(artifact_root or root, relative))
+            "manifests": {relative: _sha(manifest_bytes[relative])
                           for relative in sorted(manifests)}}
 
 
@@ -67,14 +72,37 @@ def _sanitized_task(task: Dict[str, Any]) -> Dict[str, Any]:
     return view
 
 
+def _inline_eligible(task):
+    return (not task.get("verification_evidence") and not task.get("reviews") and
+            not task.get("verification_binding", {}).get("manifests") and
+            all(isinstance(item, dict) and isinstance(item.get("detail", ""), str) and
+                len(item.get("detail", "").encode("utf-8")) <= reporter.MAX_FAILURE_EXCERPT_BYTES and
+                not any(item.get(key) for key in ("artifacts", "artifact", "artifact_ref"))
+                for item in task.get("evidence", [])))
+
+
 def compact_task(task: Dict[str, Any], reference: Optional[Dict[str, Any]] = None,
                  *, freshness: str = "unavailable") -> Dict[str, Any]:
     """Keep unknown task fields; compact only fields whose semantics are defined."""
     view = _sanitized_task(task)
+    if reference is None and _inline_eligible(task):
+        view.pop("verification_binding", None)
+        for original, selected in zip(task.get("evidence", []), view.get("evidence", [])):
+            if "criterion" in original:
+                selected["criterion"] = original["criterion"]
+            selected["detail"] = _detail(original.get("detail", ""))
+        view["evidence_view"] = {"mode": "inline", "freshness": None}
+        if task.get("verification_commands") or task.get("verification_profiles"):
+            view["evidence_view"]["not_run"] = True
+        return view
     records = task.get("verification_evidence", [])
     criteria = list(task.get("acceptance_criteria", []))
-    for values in task.get("contract_evidence", {}).values():
-        criteria.extend(value for value in values if value not in criteria)
+    criterion_refs = list(range(len(criteria)))
+    for contract, values in task.get("contract_evidence", {}).items():
+        for index, value in enumerate(values):
+            if value not in criteria:
+                criteria.append(value)
+                criterion_refs.append(["contract_evidence", contract, index])
     checks, declarations, identities = [], [], {}
     for record in records:
         identity = canonical_digest({key: record.get(key) for key in (
@@ -123,7 +151,7 @@ def compact_task(task: Dict[str, Any], reference: Optional[Dict[str, Any]] = Non
                              "linkage": "explicit" if len(links) == 1 else
                              ("manual" if not command else "unverified"),
                              "checks": links if len(links) == 1 else []})
-        coverage.append({"id": "C%d" % (index + 1), "criterion": criterion,
+        coverage.append({"id": "C%d" % (index + 1), "criterion_ref": criterion_refs[index],
                          "reported": reported or [{"result": "unavailable"}]})
 
     # Review findings have no resolution flag today: keep all findings visible.
@@ -226,10 +254,21 @@ def prepare_evidence(state: Dict[str, Any], task: Dict[str, Any], artifact_root:
                      provider_root: Path, *, review: bool = False) -> EvidencePackage:
     """Validate canonical records, then project private artifacts into readable scope."""
     artifact_root, provider_root = artifact_root.resolve(), provider_root.resolve()
+    if _inline_eligible(task):
+        if review and (task.get("verification_commands") or task.get("verification_profiles")):
+            raise EvidenceError("review verification evidence is stale or unavailable; verify again")
+        return EvidencePackage(compact_task(task), [], [])
     records = task.get("verification_evidence", [])
     binding = task.get("verification_binding")
+    read_cache = {}
+
+    def read_original(relative):
+        if relative not in read_cache:
+            read_cache[relative] = _read(artifact_root, relative)
+        return read_cache[relative]
+
     try:
-        expected = verification_binding(state, task, provider_root, artifact_root)
+        expected = verification_binding(state, task, provider_root, artifact_root, manifest_bytes=read_cache)
     except (PolicyError, OSError) as exc:
         raise EvidenceError("cannot attribute verification evidence: %s" % exc) from exc
     if binding and binding.get("manifests", {}) != expected["manifests"]:
@@ -243,7 +282,7 @@ def prepare_evidence(state: Dict[str, Any], task: Dict[str, Any], artifact_root:
         if any(item.get("status") == "not-run" for item in preview["evidence_view"]["declarations"]):
             raise EvidenceError("review has required verification checks not run")
 
-    originals, copies, manifests = [], {}, {}
+    originals, copies, manifests = {}, {}, {}
     try:
         for record in records:
             artifacts = record.get("artifacts", {})
@@ -257,22 +296,22 @@ def prepare_evidence(state: Dict[str, Any], task: Dict[str, Any], artifact_root:
             if not relative:
                 raise EvidenceError("check lacks its verification manifest")
             if relative not in manifests:
-                raw = _read(artifact_root, relative)
+                raw = read_original(relative)
                 manifest = json.loads(raw.decode("utf-8"))
                 if manifest.get("task") != task["id"] or manifest.get("state") != "complete":
                     raise EvidenceError("verification manifest ownership/state mismatch")
                 manifests[relative] = manifest
-                originals.append((artifact_root, relative, _sha(raw)))
+                originals[relative] = (artifact_root, relative, _sha(raw))
                 copies[relative] = json.dumps(_sanitized(manifest), ensure_ascii=False).encode("utf-8")
             manifest = manifests[relative]
             plain = {key: value for key, value in record.items() if key != "artifact_manifest"}
             if canonical_digest(plain) not in {canonical_digest(item) for item in manifest.get("results", [])}:
                 raise EvidenceError("canonical check differs from verification manifest")
             for artifact in artifacts.values():
-                raw = _read(artifact_root, artifact["path"])
+                raw = read_original(artifact["path"])
                 if _sha(raw) != artifact["sha256"] or len(raw) != artifact["bytes"]:
                     raise EvidenceError("verification log hash/size mismatch")
-                originals.append((artifact_root, artifact["path"], _sha(raw)))
+                originals[artifact["path"]] = (artifact_root, artifact["path"], _sha(raw))
                 copies[artifact["path"]] = raw
         directory = _new_directory(artifact_root)
         files, locations = {}, {}
@@ -304,6 +343,6 @@ def prepare_evidence(state: Dict[str, Any], task: Dict[str, Any], artifact_root:
                      "sha256": _sha((readable / "manifest.json").read_bytes()),
                      "source": expected["source"], "evidence_digest": manifest["evidence_digest"]}
         view = compact_task(task, reference, freshness=freshness)
-        return EvidencePackage(view, roots, originals)
+        return EvidencePackage(view, roots, list(originals.values()))
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise EvidenceError("cannot prepare attributed evidence package: %s" % exc) from exc

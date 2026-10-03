@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import re
@@ -126,9 +127,28 @@ def make_item(kind: str, source_path: str, anchor: str, heading: str, body: byte
     }
 
 
-def scan_markdown_file(root: Path, kind: str, path: Path) -> list[dict]:
+def _safe_source(root: Path, path: Path) -> bool:
     try:
-        text = path.read_text(encoding="utf-8")
+        parts = path.relative_to(root).parts
+    except ValueError:
+        return False
+    cursor = root
+    for part in parts:
+        cursor = cursor / part
+        if cursor.is_symlink():
+            return False
+    return path.is_file() and path.resolve().is_relative_to(root.resolve())
+
+
+def scan_markdown_file(root: Path, kind: str, path: Path, *, raw: bytes | None = None) -> list[dict]:
+    if not _safe_source(root, path):
+        return []
+    try:
+        if raw is None:
+            text = path.read_text(encoding="utf-8")
+        else:
+            with io.TextIOWrapper(io.BytesIO(raw), encoding="utf-8", newline=None) as reader:
+                text = reader.read()
     except (OSError, UnicodeDecodeError):
         return []  # unreadable/malformed source: not emitted as an active item
     rel = path.relative_to(root).as_posix()
@@ -142,12 +162,16 @@ def scan_markdown_file(root: Path, kind: str, path: Path) -> list[dict]:
     return items
 
 
-def scan_contract_file(root: Path, path: Path) -> list[dict]:
+def scan_contract_file(root: Path, path: Path, *, raw: bytes | None = None) -> list[dict]:
+    if not _safe_source(root, path):
+        return []
     try:
-        raw = path.read_bytes()
+        raw = path.read_bytes() if raw is None else raw
         data = json.loads(raw.decode("utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return []  # malformed source: not emitted as an active item
+    if not isinstance(data, dict):
+        return []
     rel = path.relative_to(root).as_posix()
     title = str(data.get("title") or path.stem)
     description = str(data.get("description") or "")
