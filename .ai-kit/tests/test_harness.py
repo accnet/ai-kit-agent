@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import subprocess
@@ -52,6 +53,7 @@ from providers import (  # noqa: E402
 from schemas import EXECUTION_SCHEMA, PLAN_SCHEMA, REVIEW_SCHEMA  # noqa: E402
 from store import LockError, RepositoryStore, StoreError  # noqa: E402
 from worktrees import GitWorkspaceManager, WorkspaceError, WorkspaceRecord  # noqa: E402
+from verification import reporter as verification_reporter  # noqa: E402
 
 
 def task(
@@ -423,6 +425,14 @@ class HarnessCase(unittest.TestCase):
         self.assertNotIn("stdout", evidence)
         self.assertNotIn("stderr", evidence)
         self.assertGreater(evidence["output_bytes"], 0)
+        artifact = evidence["artifacts"]["stdout"]
+        output = (self.root / artifact["path"]).read_bytes()
+        self.assertEqual(output, b"verified\n")
+        self.assertEqual(hashlib.sha256(output).hexdigest(), artifact["sha256"])
+        self.assertTrue(evidence["source_snapshot"].startswith("sha256:"))
+        manifest = json.loads((self.root / evidence["artifact_manifest"]).read_text())
+        self.assertEqual(manifest["metrics"]["executed_checks"], 1)
+        self.assertIsNone(manifest["metrics"]["llm_usage"])
 
     def test_independent_verification_failure_and_timeout_are_durable(self):
         (self.root / "verify-fail.py").write_text(
@@ -448,7 +458,7 @@ class HarnessCase(unittest.TestCase):
         self.assertEqual(failed["state"], "ready")
 
         with patch(
-            "engine.subprocess.run",
+            "verification.reporter.subprocess.run",
             side_effect=subprocess.TimeoutExpired(cmd=[sys.executable], timeout=120),
         ):
             with self.assertRaisesRegex(PolicyError, "independent verification failed"):
@@ -456,6 +466,121 @@ class HarnessCase(unittest.TestCase):
         timed_out = self.store.load_state("demo")["tasks"][0]
         self.assertTrue(timed_out["verification_evidence"][0]["timed_out"])
         self.assertIsNone(timed_out["verification_evidence"][0]["exit_code"])
+
+    def test_verification_coalesces_declarations_with_profile_timeout(self):
+        (self.root / "check.py").write_text("print('checked')\n", encoding="utf-8")
+        command = [sys.executable, "check.py"]
+        definition = {"command": command, "cwd": ".", "timeout_seconds": 900,
+                      "evidence": {"feature": "demo", "task": "T1", "artifacts": ["stdout"]}}
+        (self.root / ".ai-kit/qa-profiles.json").write_text(json.dumps({
+            "schema_version": 1, "profiles": {"full": definition},
+        }), encoding="utf-8")
+        bounded = task(1, verification_commands=[command, command], verification_profiles=["full"])
+        with patch("verification.reporter.subprocess.run", wraps=subprocess.run) as run:
+            records = self.engine._run_verification_commands(bounded)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.kwargs["timeout"], 900)
+        self.assertEqual(len(records), 3)
+        self.assertEqual([item["reused_in_batch"] for item in records], [False, True, True])
+        self.assertTrue(all(item["passed"] for item in records))
+        self.assertEqual(records[-1]["profile_id"], "full")
+        manifest = json.loads((self.root / records[0]["artifact_manifest"]).read_text())
+        self.assertEqual(manifest["metrics"]["duplicate_references"], 2)
+        self.assertEqual(manifest["metrics"]["executed_checks"], 1)
+        with patch("verification.reporter.subprocess.run", wraps=subprocess.run) as run:
+            repeated = self.engine._run_verification_commands(bounded)
+        self.assertEqual(run.call_count, 1)
+        self.assertNotEqual(repeated[0]["artifact_manifest"], records[0]["artifact_manifest"])
+
+    def test_verification_rejects_configuration_before_inline_execution(self):
+        (self.root / "check.py").write_text("print('checked')\n", encoding="utf-8")
+        command = [sys.executable, "check.py"]
+        first = {"command": command, "cwd": ".", "timeout_seconds": 30,
+                 "evidence": {"feature": "demo", "task": "T1", "artifacts": ["stdout"]}}
+        second = dict(first, timeout_seconds=900)
+        (self.root / ".ai-kit/qa-profiles.json").write_text(json.dumps({
+            "schema_version": 1, "profiles": {"first": first, "second": second},
+        }), encoding="utf-8")
+        for profiles in (["missing"], ["first", "second"]):
+            with self.subTest(profiles=profiles):
+                with patch("verification.reporter.subprocess.run", side_effect=AssertionError("command ran")):
+                    records = self.engine._run_verification_commands(task(
+                        1, verification_commands=[command], verification_profiles=profiles,
+                    ))
+                self.assertFalse(records[0]["passed"])
+                self.assertEqual(records[0]["failure_kind"], "configuration")
+
+    def test_verification_failure_excerpt_is_bounded_and_redacted(self):
+        secret = "fixture-sensitive-value"
+        (self.root / "fail.py").write_text(
+            "print('x' * 4000)\nprint('token=" + secret + "')\nraise SystemExit(7)\n",
+            encoding="utf-8",
+        )
+        records = self.engine._run_verification_commands(task(
+            1, verification_commands=[[sys.executable, "fail.py"], [sys.executable, "fail.py"]],
+        ))
+        self.assertEqual(len(records), 1)
+        record = records[0]
+        self.assertEqual(record["failure_kind"], "test")
+        self.assertLessEqual(len(record["failure_excerpt"].encode("utf-8")), 2048)
+        self.assertNotIn(secret, json.dumps(record))
+        raw = (self.root / record["artifacts"]["stdout"]["path"]).read_text()
+        self.assertIn(secret, raw)
+
+    def test_verification_retains_partial_timeout_output(self):
+        (self.root / "check.py").write_text("pass\n", encoding="utf-8")
+        with patch("verification.reporter.subprocess.run", side_effect=subprocess.TimeoutExpired(
+            cmd=[sys.executable], timeout=120, output=b"partial stdout", stderr=b"partial stderr",
+        )):
+            record = self.engine._run_verification_commands(task(
+                1, verification_commands=[[sys.executable, "check.py"]],
+            ))[0]
+        self.assertEqual(record["failure_kind"], "timeout")
+        self.assertIn("partial stdout", record["failure_excerpt"])
+        self.assertIn("partial stderr", record["failure_excerpt"])
+
+    def test_verification_artifact_failure_blocks_success(self):
+        (self.root / "check.py").write_text("print('pass')\n", encoding="utf-8")
+        bounded = task(1, verification_commands=[[sys.executable, "check.py"]])
+        with patch.object(verification_reporter, "write_private_bytes", side_effect=OSError("disk full")):
+            records = self.engine._run_verification_commands(bounded)
+        self.assertTrue(any(not item["passed"] and item["failure_kind"] == "artifact" for item in records))
+
+    def test_verification_rejects_mutation_and_records_new_snapshot(self):
+        script = self.root / "check.py"
+        script.write_text("from pathlib import Path\nPath('unexpected.txt').write_text('changed')\n", encoding="utf-8")
+        bounded = task(1, verification_commands=[[sys.executable, "check.py"], [sys.executable, "check.py"]])
+        records = self.engine._run_verification_commands(bounded)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["failure_kind"], "repository_mutation")
+        self.assertNotEqual(records[0]["source_snapshot"], records[0]["source_snapshot_after"])
+        script.write_text("print('pass')\n", encoding="utf-8")
+        new = self.engine._run_verification_commands(bounded)
+        self.assertTrue(new[0]["passed"])
+        self.assertNotEqual(records[0]["source_snapshot"], new[0]["source_snapshot"])
+
+    def test_verification_artifacts_survive_isolated_root_cleanup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            (workspace / "check.py").write_text("print('isolated')\n", encoding="utf-8")
+            records = self.engine._run_verification_commands(task(
+                1, verification_commands=[[sys.executable, "check.py"]],
+            ), root=workspace)
+        artifact = self.root / records[0]["artifacts"]["stdout"]["path"]
+        self.assertEqual(artifact.read_text().strip(), "isolated")
+
+    def test_execution_and_review_prompts_keep_dynamic_state_last(self):
+        state = {"goal": "stable goal", "tasks": []}
+        bounded = task(1)
+        changed = dict(bounded, attempts=2, verification_evidence=[{"failure_kind": "timeout"}])
+        for build in (self.engine._execution_prompt, self.engine._review_prompt):
+            first = build(state, bounded, "stable context")
+            second = build(state, changed, "stable context")
+            boundary = first.index("stable context") + len("stable context")
+            self.assertEqual(first[:boundary], second[:boundary])
+            self.assertGreater(first.index('"acceptance_criteria"'), boundary)
+            self.assertIn("criterion 1 passes", second)
+            self.assertIn('"timeout"', second)
 
     def test_verification_command_policy_rejects_inline_and_unknown_execution(self):
         rejected = (
@@ -509,7 +634,7 @@ class HarnessCase(unittest.TestCase):
                 },
             )
             with patch(
-                "engine.subprocess.run",
+                "verification.reporter.subprocess.run",
                 side_effect=AssertionError("verification subprocess executed"),
             ):
                 with self.assertRaisesRegex(PolicyError, "independent verification failed"):

@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 import json
-import hashlib
 import re
-import subprocess
-import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from memory import MemoryStore
 from dependencies import CrossFeatureDependencyResolver
-from qa_profiles import QaProfileError, QaProfileResolver
 from models import (
     APPROVAL_REQUIRED_RISKS,
     REMEDIATION_GATES,
@@ -44,7 +40,6 @@ from policy import (
     validate_scope_roots,
     validate_remediation_links,
     validate_success,
-    validate_verification_command_paths,
 )
 from projection import render_plan, render_tasks, write_projections
 from compatibility import CompatibilityError, compare as compare_contracts
@@ -54,6 +49,7 @@ try:
 except ImportError:
     adapter_for = None
 from providers import ProviderError, ProviderRequest
+from verification import run_verification
 from schemas import EXECUTION_SCHEMA, PLAN_SCHEMA, REVIEW_SCHEMA
 from store import RepositoryStore, StoreError
 from worktrees import GitWorkspaceManager, PatchArtifact, WorkspaceError, WorkspaceRecord
@@ -859,6 +855,7 @@ class HarnessEngine:
                     allowed_dirty_paths=[
                         ".project/%s" % feature,
                         ".workspace/harness/%s.lock" % feature,
+                        ".workspace/qa",
                     ],
                 )
                 task["workspace"] = {
@@ -1546,97 +1543,7 @@ class HarnessEngine:
     def _run_verification_commands(
         self, task: Dict[str, Any], *, root: Optional[Path] = None
     ) -> List[Dict[str, Any]]:
-        """Run accepted argv commands without a shell and return bounded evidence."""
-
-        verification_root = Path(root or self.store.root).resolve()
-        records: List[Dict[str, Any]] = []
-        for command in task.get("verification_commands", []):
-            started = time.monotonic()
-            timed_out = False
-            exit_code: Optional[int]
-            stdout = ""
-            stderr = ""
-            policy_error = ""
-            try:
-                validate_verification_command_paths(verification_root, command, task["id"])
-                completed = subprocess.run(
-                    command,
-                    cwd=str(verification_root),
-                    capture_output=True,
-                    text=True,
-                    timeout=120,
-                    shell=False,
-                    check=False,
-                )
-                exit_code = completed.returncode
-                stdout = completed.stdout or ""
-                stderr = completed.stderr or ""
-            except subprocess.TimeoutExpired as exc:
-                exit_code = None
-                timed_out = True
-                stdout = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
-                stderr = (exc.stderr or "") if isinstance(exc.stderr, str) else ""
-            except PolicyError as exc:
-                exit_code = None
-                policy_error = str(exc)
-                stderr = policy_error
-            except OSError as exc:
-                exit_code = 127
-                stderr = str(exc)
-            duration_ms = int((time.monotonic() - started) * 1000)
-            output = (stdout + "\n" + stderr).encode("utf-8", errors="replace")
-            record = {
-                    "command": list(command),
-                    "exit_code": exit_code,
-                    "duration_ms": duration_ms,
-                    "output_digest": "sha256:" + hashlib.sha256(output).hexdigest(),
-                    "output_bytes": len(output),
-                    "timed_out": timed_out,
-                    "passed": exit_code == 0 and not timed_out,
-                }
-            if policy_error:
-                record["policy_error"] = policy_error
-            records.append(record)
-            if records[-1]["passed"] is False:
-                break
-        if records and not records[-1]["passed"]:
-            return records
-        try:
-            profiles = QaProfileResolver(verification_root).resolve(task.get("verification_profiles", []))
-        except QaProfileError as exc:
-            if task.get("verification_profiles"):
-                records.append({"profile_id": None, "passed": False, "exit_code": None, "timed_out": False, "policy_error": str(exc)})
-            return records
-        for profile in profiles:
-            started = time.monotonic()
-            timed_out = False
-            stdout = ""
-            stderr = ""
-            try:
-                completed = subprocess.run(
-                    list(profile.command), cwd=str(verification_root / profile.cwd),
-                    capture_output=True, text=True, timeout=profile.timeout_seconds,
-                    shell=False, check=False,
-                )
-                exit_code = completed.returncode
-                stdout, stderr = completed.stdout or "", completed.stderr or ""
-            except subprocess.TimeoutExpired as exc:
-                exit_code, timed_out = None, True
-                stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-                stderr = exc.stderr if isinstance(exc.stderr, str) else ""
-            except OSError as exc:
-                exit_code, stderr = 127, str(exc)
-            output = (stdout + "\n" + stderr).encode("utf-8", errors="replace")
-            records.append({
-                "profile_id": profile.identifier, "command": list(profile.command), "cwd": profile.cwd,
-                "timeout_seconds": profile.timeout_seconds, "metadata": profile.evidence_metadata(),
-                "exit_code": exit_code, "duration_ms": int((time.monotonic() - started) * 1000),
-                "output_digest": "sha256:" + hashlib.sha256(output).hexdigest(), "output_bytes": len(output),
-                "timed_out": timed_out, "passed": exit_code == 0 and not timed_out,
-            })
-            if not records[-1]["passed"]:
-                break
-        return records
+        return run_verification(task, Path(root or self.store.root), self.store.root)
 
     def _merge_contract_state(
         self,
@@ -1788,15 +1695,15 @@ class HarnessEngine:
             "each acceptance criterion. After all tool work is complete, return exactly one JSON "
             "object that validates against the final-result schema below; do not emit progress JSON "
             "objects. Never change an undeclared service or contract.\n\nFinal-result schema:\n%s"
-            "\n\nGoal: %s\nTask: %s\n\nService/contract graph: %s\n\nContext:\n%s"
+            "\n\nGoal: %s\n\nService/contract graph: %s\n\nContext:\n%s\n\nTask: %s"
             % (
                 workflow,
                 owner_contract,
                 json.dumps(EXECUTION_SCHEMA, ensure_ascii=False, separators=(",", ":")),
                 state["goal"],
-                json.dumps(task, ensure_ascii=False, indent=2),
                 graph,
                 context,
+                json.dumps(task, ensure_ascii=False, indent=2),
             )
         )
 
@@ -1822,14 +1729,14 @@ class HarnessEngine:
             "only in that disposable workspace; inspect it with `git diff --cached`. After all checks, "
             "return exactly one JSON object that validates against the final-review schema below; do not "
             "emit progress JSON objects.\n\nFinal-review schema:\n%s\n\n"
-            "Goal: %s\nTask and evidence: %s\n\nService/contract graph: %s\n\nContext:\n%s"
+            "Goal: %s\n\nService/contract graph: %s\n\nContext:\n%s\n\nTask and evidence: %s"
             % (
                 review_instruction,
                 json.dumps(REVIEW_SCHEMA, ensure_ascii=False, separators=(",", ":")),
                 state["goal"],
-                json.dumps(task, ensure_ascii=False, indent=2),
                 graph,
                 context,
+                json.dumps(task, ensure_ascii=False, indent=2),
             )
         )
 

@@ -33,11 +33,12 @@ Verify the feature behaves correctly end-to-end from the user's perspective.
   task through the CLI selected in `.ai-kit/config.json`. A QA worker whose prompt
   already identifies one bounded harness task executes directly and never
   dispatches a nested step.
-- For complete regression evidence with compact output, use `.ai-kit/scripts/qa-report.sh
-  --profile all` (the default). It runs AI-Kit, theme, and browser QA in fixed
-  order even after a failure; do not substitute a changed-path subset for full
-  validation. Named `ai-kit`, `theme`, and `browser` profiles are for isolated
-  diagnosis only. Unknown or duplicate profile arguments are failures.
+- For regression evidence with compact output, select profiles explicitly with
+  `.ai-kit/scripts/qa-report.sh --profile ai-kit|theme|browser|all`. Use `ai-kit`
+  for kit regression; include project profiles when required by acceptance and
+  supported by their runners. Explicit `all` runs the fixed complete matrix even
+  after failures. Missing, unknown, or duplicate profile arguments are errors.
+  Focused implementation checks never replace required final regression coverage.
 - Treat the reporter's local artifact as the source of raw stdout/stderr:
   normal output is bounded, raw logs are owner-only and never automatically
   placed in agent context, and `--verbose` reproduces the stored logs.

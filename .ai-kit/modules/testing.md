@@ -29,7 +29,30 @@ Every implementation task (unit level) and every QA task (integration/E2E level)
 - Preserve the repository's established test layout, naming, runner, and
   package scripts. Do not add a framework or install dependencies implicitly.
 
-## Runner Selection
+## Efficient Verification
+- During implementation, run focused checks that prove the changed behavior.
+  After the implementation dependency barrier, run all regression profiles
+  required by the acceptance criteria. This does not waive QA or G3.
+- Use `bash .ai-kit/scripts/qa-report.sh --profile ai-kit` for kit regression.
+  Select project profiles explicitly when their runners and scope apply. There
+  is no implicit `all`; explicit `all` still runs the full fixed matrix.
+- Read the compact summary first. Open only the relevant failed-test artifact
+  when diagnosis needs more detail. Do not replay successful raw logs into context.
+- `doctor.sh --full` includes the complete kit suite. Avoid running it immediately
+  after the same full suite on unchanged inputs merely to obtain another summary.
+  Use focused doctor/configuration checks and Git QA for missing evidence.
+- A new patch, integration of worker changes, changed tests/configuration/runtime,
+  missing evidence, or a review finding can justify another run. Never reuse a
+  different snapshot's pass, or skip checks explicitly required by acceptance.
+- Treat missing executables/runners and environment setup failures as environment
+  defects. Diagnose timeout limits before retrying; use a declared QA profile for
+  long checks. Non-zero exits still require diagnosis, not automatic reruns.
+- Record attempts through the existing coordinator policy. Do not change code to
+  fix an environment error, retry flaky tests into green, or waive failing checks.
+- Measure executed checks, duplicate declarations, and log/excerpt bytes from local
+  manifests. Missing provider usage stays unknown; bytes are not token/quota counts.
+
+## Runner Precedence
 Use this precedence when choosing how to run tests:
 
 1. An existing project command (`package.json`, `Makefile`, `pyproject.toml`,

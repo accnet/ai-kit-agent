@@ -40,12 +40,17 @@ changing what QA executes:
 .ai-kit/scripts/qa-report.sh --profile ai-kit|theme|browser|all
 ```
 
-`all` is the default profile. It runs the existing AI-Kit, theme, and browser
+An explicit profile is required; omitting it exits with usage status 2 before
+running any command. Use `--profile ai-kit` for kit regression in this repository.
+Explicit `--profile all` runs the existing AI-Kit, theme, and browser
 commands in their fixed repository order, with their existing coverage and
 compute cost. It continues through every profile even after one fails, then
 returns a non-zero status when any profile failed. A named profile runs only
 that existing command. Unknown profile names and duplicate profile arguments
-are usage errors and fail without running QA.
+are usage errors and fail without running QA. A selected profile whose required
+runner/package file is absent reports an environment failure, never a pass or
+silent skip. Select profiles from the task's acceptance scope and available project
+runners; do not request optional theme/browser suites in a kit-only checkout.
 
 Normal output is a bounded summary of each selected profile's status, duration,
 and local artifact location; a failure also identifies its command. Raw stdout and stderr are retained only
@@ -54,6 +59,8 @@ context. On failure, the summary also identifies the failed profile and a
 bounded diagnostic excerpt. `--verbose` reproduces the stored logs for the
 selected run. The reporter is a presentation and evidence layer: it does not
 select tests from changed paths, weaken a suite, or reduce browser coverage.
+The local manifest includes output/excerpt byte counts and completed-profile
+counts. `llm_usage: null` means unavailable, not zero tokens or zero quota cost.
 
 Legacy cross-workstream barriers use a task-plan metadata line:
 
@@ -92,19 +99,41 @@ from malformed canonical state to Markdown.
 Tasks may also declare optional ordered `verification_profiles` alongside
 legacy `verification_commands`. A profile ID expands from `.ai-kit/qa-profiles.json`
 to a validated argument vector, repository-contained working directory,
-bounded timeout, and immutable evidence metadata. Inline commands run first,
-then profiles in declared order. Execution stops at the first non-zero exit,
+bounded timeout, and immutable evidence metadata. Profiles are resolved before any
+command executes. Inline commands run first, then profiles in declared order.
+Exact duplicate declarations with the same argv, resolved cwd, and timeout execute
+once in that verification batch, retaining one evidence record per declaration.
+Conflicting timeouts among selected profiles for the same command/cwd fail before
+execution. Execution stops at the first non-zero exit,
 timeout, unsafe profile, or repository mutation; no later command runs.
 Profiles never use a shell and cannot override command, cwd, timeout, or
-metadata inline. Existing plans with only `verification_commands` retain their
-fixed 120-second execution behavior.
+metadata inline. Inline commands retain a 120-second timeout unless an explicitly
+selected profile has the same argv and cwd; that profile supplies the timeout for
+both declarations. Use profiles for longer checks instead of retrying a command
+that cannot finish within the inline timeout.
 
 Every completed verification records an ordered evidence item. Inline evidence
 records its command outcome; profile evidence additionally snapshots profile
 ID, command argv, cwd, timeout, metadata, exit code, duration, and output
-digest. Raw output is not stored in canonical state. Declared barriers and
+digest. Each executed check also stores checksummed stdout/stderr artifacts in the
+coordinator's local QA directory, so isolated-worktree cleanup does not erase them.
+Canonical evidence contains artifact pointers, a bounded redacted failure excerpt,
+source snapshots before/after, runtime/environment attribution, and a check digest.
+Failure kinds distinguish configuration, policy, environment/launch, timeout,
+signal, non-zero test exit, repository mutation, and artifact failures; do not infer
+a root cause from an exit code alone. Artifact capture failure blocks verification.
+Raw output is not stored in canonical state. Declared barriers and
 verification profiles participate in the normalised plan and task-action
 digests only when present, preserving compatibility for legacy plans.
+
+The local verification manifest counts declared/executed checks, duplicate
+references, and output bytes. It makes no claim about unavailable LLM token usage.
+Deduplication only coalesces duplicate declarations in the current batch. It does
+not reuse previous runs, worker claims, another worktree's results, or cached passes.
+Source snapshots are evidence attribution, not a complete fingerprint of external
+services or installed dependencies. Keep verification checks isolated and deterministic.
+After an environment/timeout failure, correct the environment or declared timeout
+before retrying; a failed assertion goes back to its owning implementation task.
 
 Create `features/<feature>/brief.md` first; the harness never writes product
 intent. Then initialize canonical execution state:

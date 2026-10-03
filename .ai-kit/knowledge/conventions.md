@@ -35,9 +35,9 @@ Rules: existing project code wins over any written convention when they conflict
 - Discovered: 2026-09-03, features/project-knowledge-index
 
 ## Full QA reporting is compact but coverage-preserving
-- Rule: Use `.ai-kit/scripts/qa-report.sh --profile ai-kit|theme|browser|all` (default `all`) to report existing QA commands. `all` keeps their fixed order, runs every selected command after a failure, and exits non-zero if any failed; reject unknown or duplicate profiles.
+- Rule: Use `.ai-kit/scripts/qa-report.sh --profile ai-kit|theme|browser|all` with an explicit profile to report existing QA commands. `all` keeps their fixed order, runs every selected command after a failure, and exits non-zero if any failed; reject missing, unknown, or duplicate profiles. Select `ai-kit` for kit-only regression and preserve all acceptance-required project coverage.
 - Because: Compact local artifacts reduce agent-context tokens without making a changed-path guess that could omit a regression.
-- Discovered: 2026-08-30, features/qa-token-optimization
+- Discovered: 2026-08-30, features/qa-token-optimization; explicit selection updated 2026-10-03, .project/test-quota-efficiency
 
 ## AI-Kit and project tests have separate roots
 - Rule: Keep reusable harness/installer/DAG/profile tests in `.ai-kit/tests/`; put project suites in `/tests` with their own explicit manifest and runner.

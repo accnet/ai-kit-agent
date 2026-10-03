@@ -29,16 +29,18 @@ class Profile:
     command: Tuple[str, ...]
     cwd: str
     timeout_seconds: int
+    required_paths: Tuple[str, ...] = ()
 
 
 PROFILES: Dict[str, Profile] = {
-    "ai-kit": Profile("ai-kit", ("bash", ".ai-kit/tests/run.sh"), ".", 900),
-    "theme": Profile("theme", ("bash", "tests/run.sh"), ".", 900),
+    "ai-kit": Profile("ai-kit", ("bash", ".ai-kit/tests/run.sh"), ".", 900, (".ai-kit/tests/run.sh",)),
+    "theme": Profile("theme", ("bash", "tests/run.sh"), ".", 900, ("tests/run.sh",)),
     "browser": Profile(
         "browser",
         ("npm", "--prefix", "tests/e2e", "test", "--", "--project=chromium"),
         ".",
         1200,
+        ("tests/e2e/package.json",),
     ),
 }
 ALL_PROFILE_NAMES: Tuple[str, ...] = ("ai-kit", "theme", "browser")
@@ -117,7 +119,9 @@ def create_artifact_dir() -> Path:
 
 
 def resolve_profiles(requested: Sequence[str]) -> Tuple[Profile, ...]:
-    values = list(requested) or ["all"]
+    values = list(requested)
+    if not values:
+        raise QaReportError("choose an explicit QA profile with --profile (including 'all')")
     if len(values) != len(set(values)):
         raise QaReportError("duplicate QA profile requested")
     unknown = [value for value in values if value not in PROFILES and value != "all"]
@@ -137,7 +141,8 @@ def return_status(returncode: Optional[int], timed_out: bool) -> int:
     return 128 + abs(returncode) if returncode < 0 else returncode
 
 
-def execute_profile(profile: Profile, run_dir: Path) -> dict:
+def execute_profile(profile: Profile, run_dir: Path, *, root: Optional[Path] = None) -> dict:
+    execution_root = Path(root or ROOT).resolve()
     started_at = datetime.now(timezone.utc)
     started = time.monotonic()
     stdout = b""
@@ -146,9 +151,12 @@ def execute_profile(profile: Profile, run_dir: Path) -> dict:
     timed_out = False
     launch_error: Optional[str] = None
     try:
+        for relative in profile.required_paths:
+            if not (execution_root / relative).is_file():
+                raise FileNotFoundError("required QA input is missing: %s" % relative)
         completed = subprocess.run(
             profile.command,
-            cwd=ROOT / profile.cwd,
+            cwd=execution_root / profile.cwd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
@@ -172,6 +180,11 @@ def execute_profile(profile: Profile, run_dir: Path) -> dict:
     stdout_sha256, stdout_bytes = write_private_bytes(stdout_path, stdout)
     stderr_sha256, stderr_bytes = write_private_bytes(stderr_path, stderr)
     status = return_status(returncode, timed_out)
+    failure_kind = (
+        "timeout" if timed_out else "environment" if launch_error else
+        "signal" if returncode is not None and returncode < 0 else
+        "test" if status else None
+    )
     result = {
         "profile": profile.name,
         "command": list(profile.command),
@@ -184,6 +197,7 @@ def execute_profile(profile: Profile, run_dir: Path) -> dict:
         "status": status,
         "timed_out": timed_out,
         "launch_error": redact(launch_error) if launch_error else None,
+        "failure_kind": failure_kind,
         "stdout": {"path": artifact_relative(stdout_path), "sha256": stdout_sha256, "bytes": stdout_bytes},
         "stderr": {"path": artifact_relative(stderr_path), "sha256": stderr_sha256, "bytes": stderr_bytes},
     }
@@ -199,11 +213,17 @@ def write_manifest(run_dir: Path, requested: Sequence[str], results: List[dict],
         {
             "schema_version": 1,
             "state": state,
-            "requested_profiles": list(requested) or ["all"],
+            "requested_profiles": list(requested),
             "executed_profiles": [result["profile"] for result in results],
             "artifact_directory": artifact_relative(run_dir),
             "first_failure_status": next((result["status"] for result in results if result["status"]), 0),
             "results": results,
+            "metrics": {
+                "completed_profiles": len(results),
+                "output_bytes": sum(item[stream]["bytes"] for item in results for stream in ("stdout", "stderr")),
+                "failure_excerpt_bytes": sum(len(item.get("failure_excerpt", "").encode("utf-8")) for item in results),
+                "llm_usage": None,
+            },
         },
     )
     return manifest

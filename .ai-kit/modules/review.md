@@ -35,6 +35,11 @@ Every Reviewer task; engineers may load it for self-review before handoff.
   active-agent override.
 - Changing reviewer separation never skips QA, evidence coverage, or any of the
   five review passes.
+- Inspect existing command/artifact evidence against the reviewed snapshot and
+  acceptance criteria before rerunning tests. Another complete suite is warranted
+  by changed inputs, missing/stale evidence, or a concrete finding, not merely by
+  entering review. Worker evidence does not replace integrated regression or the
+  harness's independent verification. All five passes remain mandatory.
 - `quality.review` may route the harness review command to Codex CLI or Claude
   CLI with its pinned model. Provider selection does not imply independent
   review; the effective policy and implementation-provider comparison remain

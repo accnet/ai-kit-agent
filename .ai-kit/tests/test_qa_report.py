@@ -31,7 +31,7 @@ def load_manifest(root: Path):
     return json.loads(manifests[0].read_text(encoding="utf-8")), manifests[0]
 
 
-def run_main(root: Path, profiles, arguments=()):
+def run_main(root: Path, profiles, arguments=("--profile", "all")):
     original_root = qa_report.ARTIFACT_ROOT
     original_profiles = qa_report.PROFILES
     qa_report.ARTIFACT_ROOT = root
@@ -65,7 +65,7 @@ def inject_artifact_error(root: Path, replacement):
 
 def main() -> int:
     failures = []
-    fixed = qa_report.resolve_profiles([])
+    fixed = qa_report.resolve_profiles(["all"])
     expected = [
         ("ai-kit", ("bash", ".ai-kit/tests/run.sh")),
         ("theme", ("bash", "tests/run.sh")),
@@ -73,7 +73,7 @@ def main() -> int:
     ]
     if [(item.name, item.command) for item in fixed] != expected:
         failures.append("fixed all profile argv/order changed")
-    for values in (("missing",), ("ai-kit", "ai-kit"), ("all", "theme")):
+    for values in ((), ("missing",), ("ai-kit", "ai-kit"), ("all", "theme")):
         try:
             qa_report.resolve_profiles(values)
             failures.append("unsafe profile request was accepted: %s" % (values,))
@@ -119,7 +119,7 @@ def main() -> int:
             "browser": profile("browser", "print('QUIET-BROWSER')"),
         }
         quiet_status, quiet_success = run_main(root / "quiet-success", success_profiles)
-        verbose_status, verbose_success = run_main(root / "verbose-success", success_profiles, ("--verbose",))
+        verbose_status, verbose_success = run_main(root / "verbose-success", success_profiles, ("--profile", "all", "--verbose"))
         quiet_manifest, _ = load_manifest(root / "quiet-success")
         verbose_manifest, _ = load_manifest(root / "verbose-success")
         compact_records = [(item["profile"], item["command"], item["status"]) for item in quiet_manifest["results"]]
@@ -137,6 +137,21 @@ def main() -> int:
         timeout_result = qa_report.execute_profile(timeout, root / "timeout") if (root / "timeout").mkdir() is None else None
         if timeout_result["status"] != 124 or not timeout_result["timed_out"]:
             failures.append("timeout did not map to status 124")
+        if timeout_result["failure_kind"] != "timeout":
+            failures.append("timeout was not classified")
+        (root / "missing").mkdir()
+        missing = qa_report.Profile("missing", ("never-run-this",), ".", 30, ("absent.py",))
+        missing_result = qa_report.execute_profile(missing, root / "missing", root=root)
+        if missing_result["failure_kind"] != "environment" or "absent.py" not in missing_result["failure_excerpt"]:
+            failures.append("missing QA input was not diagnosed before execution")
+        (root / "custom").mkdir()
+        custom = qa_report.execute_profile(profile("custom", "import os; print(os.getcwd())"), root / "custom", root=root)
+        if Path(custom["stdout"]["path"]).read_text().strip() != str(root):
+            failures.append("supplied repository root was ignored")
+        if manifest["results"][0]["failure_kind"] != "test":
+            failures.append("non-zero test exit was not classified")
+        if quiet_manifest["metrics"]["llm_usage"] is not None or quiet_manifest["metrics"]["output_bytes"] <= 0:
+            failures.append("local metrics were missing or fabricated token usage")
         signalled = qa_report.Profile(
             "signal",
             ("python3", "-c", "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"),
@@ -170,6 +185,10 @@ def main() -> int:
         qa_report.subprocess.run = original_run
     if len(seen) != 1 or seen[0].get("shell") is not False:
         failures.append("profile execution did not force shell=False")
+
+    with contextlib.redirect_stderr(io.StringIO()):
+        if qa_report.main([]) != 2:
+            failures.append("no profile did not fail with usage status")
 
     if failures:
         print("AI-Kit QA reporter FAILED: " + "; ".join(failures))
